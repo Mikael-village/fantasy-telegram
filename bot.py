@@ -72,7 +72,7 @@ def get_main_keyboard() -> ReplyKeyboardMarkup:
     keyboard = [
         [KeyboardButton(
             text="⚔️ Fantasy Dashboard",
-            web_app=WebAppInfo(url=f"{WEBAPP_URL}/dashboard")
+            web_app=WebAppInfo(url=f"{WEBAPP_URL}/")
         )],
         [KeyboardButton("📊 Статус"), KeyboardButton("❓ Помощь")]
     ]

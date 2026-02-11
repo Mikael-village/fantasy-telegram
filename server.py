@@ -13,13 +13,18 @@ from fastapi import FastAPI, HTTPException, Header, Request, WebSocket, WebSocke
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import httpx
 
 # Конфигурация
 API_SECRET = os.getenv('API_SECRET', 'fantasy-secret-2026')
 BOT_TOKEN = os.getenv('BOT_TOKEN', '')
+OWNER_CHAT_ID = os.getenv('OWNER_CHAT_ID', '')
 DATA_FILE = Path(__file__).parent / 'data.json'
 INDEX_FILE = Path(__file__).parent / 'index.html'
 CHAT_FILE = Path(__file__).parent / 'chat_history.json'
+
+# Telegram API
+TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 # Создаём приложение
 app = FastAPI(
@@ -109,6 +114,28 @@ manager = ConnectionManager()
 
 # ===== УТИЛИТЫ =====
 
+async def send_to_telegram(text: str):
+    """Отправить сообщение в Telegram чат владельца"""
+    if not BOT_TOKEN or not OWNER_CHAT_ID:
+        print("⚠️ BOT_TOKEN or OWNER_CHAT_ID not set")
+        return False
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{TELEGRAM_API}/sendMessage",
+                json={
+                    "chat_id": OWNER_CHAT_ID,
+                    "text": f"🎮 [MiniApp]\n{text}",
+                    "parse_mode": "HTML"
+                },
+                timeout=10
+            )
+            return response.status_code == 200
+    except Exception as e:
+        print(f"❌ Telegram send error: {e}")
+        return False
+
 def load_data() -> dict:
     """Загрузить данные из JSON"""
     try:
@@ -188,13 +215,18 @@ async def websocket_chat(websocket: WebSocket):
             data = await websocket.receive_json()
             
             if data.get("type") == "message":
+                content = data.get("content", "")
+                
                 # Сообщение от пользователя
                 user_msg = manager.add_message(
                     role="user",
-                    content=data.get("content", ""),
+                    content=content,
                     metadata={"source": "miniapp"}
                 )
                 await manager.broadcast(user_msg)
+                
+                # Отправляем в Telegram → Clawdbot
+                await send_to_telegram(content)
                 
                 # Отправляем статус "typing"
                 await manager.broadcast({
