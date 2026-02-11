@@ -3,22 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fantasy Dashboard</title>
+    <title>Sanctum Operandi</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #1a1a2e;
-            --bg-secondary: #16213e;
-            --bg-card: #1f2937;
-            --text-primary: #ffffff;
-            --text-secondary: #9ca3af;
-            --accent: #7c3aed;
-            --accent-light: #a78bfa;
-            --gold: #fbbf24;
-            --green: #22c55e;
-            --blue: #3b82f6;
-            --red: #ef4444;
-            --border: #374151;
+            /* Arcanepunk Palette */
+            --brass: #B5A642;
+            --brass-light: #d4c76a;
+            --brass-dark: #8a7d32;
+            --bronze: #4A3728;
+            --bronze-dark: #2d2118;
+            --magic-blue: #7DF9FF;
+            --magic-blue-dim: #4ac4c9;
+            --crimson: #722F37;
+            --crimson-light: #9a4049;
+            
+            /* Backgrounds */
+            --bg-stone: #1a1612;
+            --bg-stone-light: #252019;
+            --bg-parchment: #d4c4a8;
+            --bg-parchment-dark: #b8a88c;
+            
+            /* Text */
+            --text-light: #e8e0d0;
+            --text-dim: #9a9080;
+            --text-gold: #d4b86a;
+            
+            /* Effects */
+            --glow-magic: 0 0 10px rgba(125, 249, 255, 0.5);
+            --glow-brass: 0 0 10px rgba(181, 166, 66, 0.5);
+            --shadow-deep: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        
+        @font-face {
+            font-family: 'Runes';
+            src: local('Cinzel');
         }
         
         * {
@@ -28,122 +48,582 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            font-family: 'Crimson Text', Georgia, serif;
+            background: var(--bg-stone);
+            background-image: 
+                radial-gradient(ellipse at top, rgba(74, 55, 40, 0.3) 0%, transparent 50%),
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+            color: var(--text-light);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
         
-        /* Navigation */
+        /* ===== NAVIGATION - Brass Frame (Enhanced) ===== */
         .nav {
             display: flex;
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border);
+            background: 
+                linear-gradient(180deg, rgba(74, 55, 40, 0.98) 0%, rgba(45, 33, 24, 0.99) 100%),
+                repeating-linear-gradient(90deg, transparent 0px, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 3px);
+            border-bottom: 3px solid var(--brass);
             position: sticky;
             top: 0;
             z-index: 100;
+            box-shadow: 
+                inset 0 1px 0 rgba(181, 166, 66, 0.2),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.3),
+                0 4px 15px rgba(0,0,0,0.5);
+        }
+        
+        .nav::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--brass-light), transparent);
         }
         
         .nav-item {
             flex: 1;
-            padding: 12px;
+            padding: 14px 8px;
             text-align: center;
             cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            transition: all 0.2s;
+            font-family: 'Cinzel', serif;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
             border-bottom: 2px solid transparent;
+            position: relative;
         }
         
         .nav-item:hover {
-            background: rgba(255,255,255,0.05);
+            color: var(--brass-light);
+            background: rgba(181, 166, 66, 0.1);
         }
         
         .nav-item.active {
-            color: var(--accent-light);
-            border-bottom-color: var(--accent);
+            color: var(--magic-blue);
+            border-bottom-color: var(--magic-blue);
+            text-shadow: var(--glow-magic);
         }
         
         .nav-icon {
-            font-size: 18px;
-            margin-bottom: 2px;
+            font-size: 20px;
+            margin-bottom: 4px;
+            display: block;
         }
         
-        /* Content */
+        /* ===== CONTENT ===== */
         .content {
             flex: 1;
             padding: 16px;
-            padding-bottom: 20px;
             overflow-y: auto;
         }
         
         .tab-content {
             display: none;
+            animation: fadeIn 0.3s ease;
         }
         
         .tab-content.active {
             display: block;
         }
         
-        /* Character Header */
-        .character-header {
-            background: linear-gradient(135deg, var(--accent), var(--bg-secondary));
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 16px;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* ===== PHASE 4: EFFECTS ===== */
+        
+        /* Staggered list animation */
+        @keyframes slideInFromLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .file-item {
+            animation: slideInFromLeft 0.3s ease forwards;
+            opacity: 0;
+        }
+        
+        .file-item:nth-child(1) { animation-delay: 0.05s; }
+        .file-item:nth-child(2) { animation-delay: 0.1s; }
+        .file-item:nth-child(3) { animation-delay: 0.15s; }
+        .file-item:nth-child(4) { animation-delay: 0.2s; }
+        .file-item:nth-child(5) { animation-delay: 0.25s; }
+        .file-item:nth-child(6) { animation-delay: 0.3s; }
+        .file-item:nth-child(7) { animation-delay: 0.35s; }
+        .file-item:nth-child(8) { animation-delay: 0.4s; }
+        .file-item:nth-child(n+9) { animation-delay: 0.45s; }
+        
+        /* Rune glow on hover */
+        .file-item:hover .file-icon::after {
+            content: '᛭';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            font-size: 8px;
+            color: var(--magic-blue);
+            text-shadow: 0 0 5px var(--magic-blue);
+            animation: runeAppear 0.3s ease;
+        }
+        
+        @keyframes runeAppear {
+            from { opacity: 0; transform: scale(0.5) rotate(-180deg); }
+            to { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+        
+        /* Particle effect container */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--magic-blue);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particleFly 1s ease-out forwards;
+        }
+        
+        @keyframes particleFly {
+            0% { opacity: 1; transform: scale(1) translate(0, 0); }
+            100% { opacity: 0; transform: scale(0) translate(var(--dx, 30px), var(--dy, -30px)); }
+        }
+        
+        .particle {
+            --dx: 30px;
+            --dy: -30px;
+        }
+        
+        /* Card hover lift */
+        .card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4), 0 0 15px rgba(181, 166, 66, 0.1);
+        }
+        
+        /* Quest item pulse on hover */
+        .quest-item {
+            transition: all 0.2s ease;
+        }
+        
+        .quest-item:hover {
+            transform: translateX(5px);
+            box-shadow: -3px 0 15px rgba(125, 249, 255, 0.2);
+        }
+        
+        /* Stat bar fill animation */
+        .stat-fill {
+            animation: statFillIn 1s ease-out;
+        }
+        
+        @keyframes statFillIn {
+            from { width: 0; }
+        }
+        
+        /* XP bar shimmer */
+        .xp-fill {
             position: relative;
             overflow: hidden;
         }
         
-        .character-header::before {
+        .xp-fill::after {
             content: '';
             position: absolute;
             top: 0;
-            right: 0;
-            width: 150px;
-            height: 150px;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 3s infinite;
         }
         
-        .character-top {
+        @keyframes shimmer {
+            0% { left: -100%; }
+            50%, 100% { left: 200%; }
+        }
+        
+        /* Nav item magic underline */
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--magic-blue);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px var(--magic-blue);
+        }
+        
+        .nav-item:hover::after {
+            width: 60%;
+        }
+        
+        .nav-item.active::after {
+            width: 80%;
+        }
+        
+        /* Button press effect */
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Modal appear */
+        .modal {
+            animation: modalAppear 0.3s ease;
+        }
+        
+        @keyframes modalAppear {
+            from { opacity: 0; transform: scale(0.9) translateY(-20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        
+        /* Breadcrumb glow */
+        .breadcrumb-item.current {
+            position: relative;
+        }
+        
+        .breadcrumb-item.current::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: rgba(125, 249, 255, 0.1);
+            border-radius: 4px;
+            z-index: -1;
+        }
+        
+        /* ===== SANCTUM HEADER ===== */
+        .sanctum-header {
+            background: linear-gradient(135deg, var(--crimson) 0%, var(--bronze-dark) 100%);
+            border: 2px solid var(--brass);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sanctum-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L60 30L30 60L0 30z' fill='none' stroke='%23B5A642' stroke-opacity='0.1'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+        
+        .sanctum-header::after {
+            content: '⚙';
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 40px;
+            opacity: 0.15;
+            animation: rotate 20s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .character-row {
             display: flex;
             align-items: center;
             gap: 16px;
             margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
         }
         
-        .avatar {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--gold), #f59e0b);
+        /* ===== ARCHIVARIUS CHARACTER ===== */
+        .character-portrait {
+            width: 80px;
+            height: 100px;
+            position: relative;
+            flex-shrink: 0;
+        }
+        
+        .archivarius {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        /* Body - Crimson Coat */
+        .arch-body {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 55px;
+            background: linear-gradient(180deg, var(--crimson) 0%, #4a1f24 100%);
+            border-radius: 8px 8px 15px 15px;
+            border: 2px solid var(--brass-dark);
+            box-shadow: inset -5px 0 10px rgba(0,0,0,0.3);
+        }
+        
+        /* Brass buttons on coat */
+        .arch-body::before {
+            content: '• • •';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--brass);
+            font-size: 8px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 3px var(--brass);
+        }
+        
+        /* Head */
+        .arch-head {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 35px;
+            height: 40px;
+            background: linear-gradient(180deg, #d4b896 0%, #b8a080 100%);
+            border-radius: 50% 50% 45% 45%;
+            border: 2px solid var(--bronze);
+        }
+        
+        /* Goggles */
+        .arch-goggles {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 12px;
+            background: var(--bronze);
+            border-radius: 6px;
+            border: 1px solid var(--brass);
             display: flex;
-            align-items: center;
             justify-content: center;
-            font-size: 32px;
-            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+            gap: 4px;
+            padding: 2px;
+        }
+        
+        .goggle-lens {
+            width: 14px;
+            height: 8px;
+            background: radial-gradient(circle at 30% 30%, var(--magic-blue), #2a5a6a);
+            border-radius: 50%;
+            border: 1px solid var(--brass);
+            box-shadow: 0 0 5px var(--magic-blue);
+            animation: gogglePulse 3s ease-in-out infinite;
+        }
+        
+        @keyframes gogglePulse {
+            0%, 100% { box-shadow: 0 0 5px var(--magic-blue); }
+            50% { box-shadow: 0 0 10px var(--magic-blue), 0 0 20px rgba(125, 249, 255, 0.3); }
+        }
+        
+        /* Mechanical Arm */
+        .arch-mech-arm {
+            position: absolute;
+            bottom: 20px;
+            right: 5px;
+            width: 18px;
+            height: 30px;
+            background: linear-gradient(90deg, var(--brass-dark), var(--brass), var(--brass-dark));
+            border-radius: 3px;
+            border: 1px solid var(--brass);
+            animation: armIdle 4s ease-in-out infinite;
+        }
+        
+        .arch-mech-arm::after {
+            content: '⚙';
+            position: absolute;
+            top: 5px;
+            left: 2px;
+            font-size: 10px;
+            animation: gearSpin 3s linear infinite;
+        }
+        
+        @keyframes armIdle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(3deg); }
+            75% { transform: rotate(-3deg); }
+        }
+        
+        @keyframes gearSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* ===== CORVUS - Mechanical Raven ===== */
+        .corvus {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            width: 35px;
+            height: 30px;
+            animation: corvusIdle 5s ease-in-out infinite;
+        }
+        
+        .corvus-body {
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 18px;
+            background: linear-gradient(135deg, #3a3a3a, #1a1a1a);
+            border-radius: 50% 50% 40% 40%;
+            border: 1px solid var(--brass-dark);
+        }
+        
+        /* Brass wing plates */
+        .corvus-wing {
+            position: absolute;
+            bottom: 8px;
+            width: 12px;
+            height: 15px;
+            background: linear-gradient(180deg, var(--brass-dark), #2a2a2a);
+            border: 1px solid var(--brass-dark);
+        }
+        
+        .corvus-wing.left {
+            left: 2px;
+            border-radius: 50% 0 50% 50%;
+            transform-origin: right center;
+            animation: wingFlap 5s ease-in-out infinite;
+        }
+        
+        .corvus-wing.right {
+            right: 2px;
+            border-radius: 0 50% 50% 50%;
+            transform-origin: left center;
+            animation: wingFlap 5s ease-in-out infinite reverse;
+        }
+        
+        @keyframes wingFlap {
+            0%, 90%, 100% { transform: rotate(0deg); }
+            93% { transform: rotate(-15deg); }
+            96% { transform: rotate(10deg); }
+        }
+        
+        .corvus-head {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 14px;
+            height: 12px;
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+            border-radius: 50%;
+            border: 1px solid var(--brass-dark);
+        }
+        
+        /* Glowing eyes */
+        .corvus-eye {
+            position: absolute;
+            top: 4px;
+            width: 4px;
+            height: 4px;
+            background: var(--magic-blue);
+            border-radius: 50%;
+            box-shadow: 0 0 4px var(--magic-blue), 0 0 8px var(--magic-blue);
+            animation: eyeGlow 2s ease-in-out infinite;
+        }
+        
+        .corvus-eye.left { left: 2px; }
+        .corvus-eye.right { right: 2px; }
+        
+        @keyframes eyeGlow {
+            0%, 100% { opacity: 1; box-shadow: 0 0 4px var(--magic-blue); }
+            50% { opacity: 0.7; box-shadow: 0 0 8px var(--magic-blue), 0 0 15px rgba(125, 249, 255, 0.5); }
+        }
+        
+        /* Beak */
+        .corvus-beak {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 8px solid var(--brass);
+        }
+        
+        /* Ethereal crystal heart */
+        .corvus-crystal {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background: var(--magic-blue);
+            border-radius: 2px;
+            box-shadow: 0 0 5px var(--magic-blue), 0 0 10px rgba(125, 249, 255, 0.5);
+            animation: crystalPulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes crystalPulse {
+            0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.8; }
+            50% { transform: translateX(-50%) scale(1.2); opacity: 1; }
+        }
+        
+        @keyframes corvusIdle {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            30% { transform: translateY(-2px) rotate(2deg); }
+            60% { transform: translateY(1px) rotate(-1deg); }
         }
         
         .character-info h1 {
+            font-family: 'Cinzel', serif;
             font-size: 20px;
             font-weight: 700;
+            color: var(--text-gold);
             margin-bottom: 4px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
         
         .character-title {
-            color: var(--gold);
-            font-size: 14px;
-            font-weight: 500;
+            font-size: 13px;
+            color: var(--magic-blue);
+            font-style: italic;
+            text-shadow: var(--glow-magic);
         }
         
-        /* Level & XP */
-        .level-section {
-            background: rgba(0,0,0,0.2);
-            border-radius: 12px;
-            padding: 12px;
+        /* Level Bar - Brass Gauge */
+        .level-gauge {
+            background: var(--bronze-dark);
+            border: 2px solid var(--brass-dark);
+            border-radius: 4px;
+            padding: 10px 12px;
+            position: relative;
+            z-index: 1;
         }
         
         .level-row {
@@ -154,164 +634,347 @@
         }
         
         .level-badge {
-            background: var(--gold);
-            color: #000;
+            background: linear-gradient(135deg, var(--brass) 0%, var(--brass-dark) 100%);
+            color: var(--bg-stone);
             padding: 4px 12px;
-            border-radius: 20px;
+            border-radius: 3px;
+            font-family: 'Cinzel', serif;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         
         .xp-text {
             font-size: 12px;
-            color: var(--text-secondary);
+            color: var(--text-dim);
         }
         
         .xp-bar {
             height: 8px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 4px;
+            background: var(--bg-stone);
+            border-radius: 2px;
             overflow: hidden;
+            border: 1px solid var(--brass-dark);
         }
         
         .xp-fill {
             height: 100%;
-            background: linear-gradient(90deg, var(--gold), #f59e0b);
-            border-radius: 4px;
+            background: linear-gradient(90deg, var(--brass-dark), var(--brass), var(--brass-light));
+            border-radius: 2px;
             transition: width 0.5s ease;
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.3);
         }
         
-        /* Card */
+        /* ===== CARDS - Parchment Style (Enhanced) ===== */
         .card {
-            background: var(--bg-card);
-            border-radius: 16px;
+            background: 
+                /* Слой 1: основа */
+                linear-gradient(180deg, rgba(37, 32, 25, 0.95) 0%, rgba(26, 22, 18, 0.98) 100%),
+                /* Слой 2: вертикальные царапины */
+                repeating-linear-gradient(90deg, transparent 0px, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 4px),
+                /* Слой 3: горизонтальная текстура */
+                repeating-linear-gradient(180deg, transparent 0px, transparent 8px, rgba(181, 166, 66, 0.03) 8px, rgba(181, 166, 66, 0.03) 9px),
+                /* Слой 4: виньетка */
+                radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.3) 100%);
+            border: 2px solid var(--bronze);
+            border-radius: 6px;
             padding: 16px;
             margin-bottom: 16px;
+            position: relative;
+            /* Объёмные тени */
+            box-shadow: 
+                inset 0 1px 0 rgba(181, 166, 66, 0.15),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+                inset 1px 0 0 rgba(181, 166, 66, 0.08),
+                inset -1px 0 0 rgba(0, 0, 0, 0.2),
+                0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--brass-dark), transparent);
         }
         
         .card-title {
+            font-family: 'Cinzel', serif;
             font-size: 14px;
-            color: var(--text-secondary);
+            font-weight: 600;
+            color: var(--brass);
             margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+        
+        .card-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--brass-dark), transparent);
         }
         
         /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
+            gap: 10px;
         }
         
         .stat-item {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 12px;
+            background: var(--bg-stone);
+            border: 1px solid var(--bronze);
+            border-radius: 4px;
+            padding: 10px;
         }
         
         .stat-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         
         .stat-name {
-            font-size: 11px;
-            color: var(--text-secondary);
+            font-size: 10px;
+            color: var(--text-dim);
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .stat-value {
-            font-size: 20px;
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
             font-weight: 700;
-            color: var(--accent-light);
+            color: var(--magic-blue);
+            text-shadow: var(--glow-magic);
         }
         
         .stat-bar {
-            height: 4px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 2px;
+            height: 3px;
+            background: var(--bronze-dark);
+            border-radius: 1px;
             overflow: hidden;
         }
         
         .stat-fill {
             height: 100%;
-            background: var(--accent);
-            border-radius: 2px;
+            background: linear-gradient(90deg, var(--magic-blue-dim), var(--magic-blue));
+            border-radius: 1px;
+            box-shadow: var(--glow-magic);
         }
         
-        /* Quest Item */
+        /* Quest Items */
         .quest-item {
-            background: var(--bg-secondary);
-            border-radius: 12px;
+            background: var(--bg-stone);
+            border: 1px solid var(--bronze);
+            border-left: 3px solid var(--brass);
+            border-radius: 4px;
             padding: 12px;
             margin-bottom: 8px;
             display: flex;
             align-items: center;
             gap: 12px;
+            transition: all 0.2s;
+        }
+        
+        .quest-item:hover {
+            border-left-color: var(--magic-blue);
+            box-shadow: 0 0 10px rgba(125, 249, 255, 0.2);
         }
         
         .quest-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, var(--accent), var(--blue));
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
+            background: linear-gradient(135deg, var(--crimson) 0%, var(--crimson-light) 100%);
+            border: 1px solid var(--brass-dark);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 16px;
         }
         
         .quest-info { flex: 1; }
         
         .quest-name {
-            font-size: 14px;
+            font-family: 'Cinzel', serif;
+            font-size: 13px;
             font-weight: 600;
-            margin-bottom: 4px;
+            color: var(--text-light);
+            margin-bottom: 2px;
         }
         
         .quest-progress {
-            font-size: 12px;
-            color: var(--text-secondary);
+            font-size: 11px;
+            color: var(--text-dim);
+            font-style: italic;
         }
         
         .quest-reward {
-            background: rgba(251, 191, 36, 0.2);
-            color: var(--gold);
+            background: linear-gradient(135deg, var(--brass-dark), var(--brass));
+            color: var(--bg-stone);
             padding: 4px 8px;
-            border-radius: 8px;
-            font-size: 11px;
+            border-radius: 3px;
+            font-size: 10px;
             font-weight: 600;
         }
         
         .empty-state {
             text-align: center;
-            padding: 24px;
-            color: var(--text-secondary);
+            padding: 30px;
+            color: var(--text-dim);
         }
         
         .empty-state-icon {
-            font-size: 32px;
-            margin-bottom: 8px;
+            font-size: 40px;
+            margin-bottom: 10px;
+            opacity: 0.5;
         }
         
-        /* ===== FILE MANAGER ===== */
+        /* ===== LOCATION ATMOSPHERES ===== */
+        
+        /* Причал Прибытия (Загрузки) - туман и вода */
+        .file-list[data-location="downloads"] {
+            background: 
+                linear-gradient(180deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.9) 50%, rgba(15, 15, 35, 0.95) 100%),
+                var(--bg-stone);
+            position: relative;
+        }
+        .file-list[data-location="downloads"]::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(180deg, transparent, rgba(125, 249, 255, 0.08));
+            animation: waterRipple 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes waterRipple {
+            0%, 100% { transform: scaleY(1); opacity: 0.3; }
+            50% { transform: scaleY(1.2); opacity: 0.5; }
+        }
+        
+        /* Зал Контрактов (Клиенты) - тёплый свет камина */
+        .file-list[data-location="clients"] {
+            background: 
+                radial-gradient(ellipse at bottom center, rgba(255, 100, 50, 0.1) 0%, transparent 50%),
+                linear-gradient(180deg, rgba(45, 33, 24, 0.95) 0%, rgba(26, 22, 18, 0.98) 100%),
+                var(--bg-stone);
+        }
+        .file-list[data-location="clients"]::before {
+            content: '🔥';
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            opacity: 0.3;
+            animation: flameFlicker 0.5s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+        @keyframes flameFlicker {
+            0% { opacity: 0.2; transform: translateX(-50%) scale(1); }
+            100% { opacity: 0.4; transform: translateX(-50%) scale(1.1); }
+        }
+        
+        /* Канцелярия Механикус (Делопроизводство) - пар и шестерёнки */
+        .file-list[data-location="workflow"] {
+            background: 
+                repeating-linear-gradient(45deg, transparent 0px, transparent 20px, rgba(181, 166, 66, 0.02) 20px, rgba(181, 166, 66, 0.02) 40px),
+                linear-gradient(180deg, rgba(42, 35, 28, 0.95) 0%, rgba(26, 22, 18, 0.98) 100%),
+                var(--bg-stone);
+        }
+        .file-list[data-location="workflow"]::after {
+            content: '⚙';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 30px;
+            opacity: 0.1;
+            animation: gearRotate 10s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes gearRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Катакомбы Памяти (Архив) - пыль и факелы */
+        .file-list[data-location="archive"] {
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(255, 150, 50, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(255, 150, 50, 0.05) 0%, transparent 20%),
+                linear-gradient(180deg, rgba(20, 18, 15, 0.98) 0%, rgba(15, 13, 10, 0.99) 100%),
+                var(--bg-stone);
+        }
+        
+        /* Башня Оракула (Jarvis) - звёздное небо */
+        .file-list[data-location="oracle"] {
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.02) 0%, transparent 2%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 2%),
+                radial-gradient(circle at 50% 60%, rgba(255, 255, 255, 0.02) 0%, transparent 2%),
+                radial-gradient(circle at 30% 80%, rgba(255, 255, 255, 0.02) 0%, transparent 2%),
+                radial-gradient(ellipse at center, rgba(125, 249, 255, 0.1) 0%, transparent 50%),
+                linear-gradient(180deg, rgba(10, 10, 25, 0.98) 0%, rgba(5, 5, 15, 0.99) 100%),
+                var(--bg-stone);
+        }
+        
+        /* Хранилище Реликвий (Постоянное) - золотое свечение */
+        .file-list[data-location="vault"] {
+            background: 
+                radial-gradient(ellipse at center, rgba(181, 166, 66, 0.1) 0%, transparent 60%),
+                linear-gradient(180deg, rgba(40, 35, 25, 0.95) 0%, rgba(26, 22, 18, 0.98) 100%),
+                var(--bg-stone);
+            border-color: var(--brass-dark);
+        }
+        
+        /* Алхимическая Печь (Корзина) - жар и красное свечение */
+        .file-list[data-location="furnace"] {
+            background: 
+                radial-gradient(ellipse at bottom, rgba(114, 47, 55, 0.3) 0%, transparent 50%),
+                linear-gradient(180deg, rgba(35, 20, 20, 0.95) 0%, rgba(45, 15, 15, 0.98) 100%),
+                var(--bg-stone);
+        }
+        .file-list[data-location="furnace"]::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255, 100, 50, 0.5), rgba(255, 50, 50, 0.8), rgba(255, 100, 50, 0.5), transparent);
+            animation: emberGlow 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes emberGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        
+        /* ===== FILE MANAGER - Arcanepunk ===== */
         
         .files-header {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 12px;
+            gap: 10px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
         }
         
         .breadcrumb {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
             flex: 1;
             min-width: 0;
             overflow-x: auto;
@@ -319,41 +982,43 @@
         }
         
         .breadcrumb-item {
-            color: var(--text-secondary);
-            font-size: 13px;
+            font-family: 'Cinzel', serif;
+            color: var(--text-dim);
+            font-size: 12px;
             cursor: pointer;
-            white-space: nowrap;
-            padding: 4px 8px;
-            border-radius: 6px;
+            padding: 4px 10px;
+            border-radius: 3px;
             transition: all 0.2s;
+            white-space: nowrap;
         }
         
         .breadcrumb-item:hover {
-            background: var(--bg-card);
-            color: var(--text-primary);
+            background: var(--bronze);
+            color: var(--brass-light);
         }
         
         .breadcrumb-item.current {
-            color: var(--accent-light);
-            font-weight: 500;
+            color: var(--magic-blue);
+            text-shadow: var(--glow-magic);
         }
         
         .breadcrumb-sep {
-            color: var(--border);
-            font-size: 12px;
+            color: var(--brass-dark);
+            font-size: 10px;
         }
         
         .files-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
         }
         
         .btn {
             padding: 8px 12px;
-            border-radius: 8px;
-            border: none;
-            font-size: 13px;
-            font-weight: 500;
+            border-radius: 4px;
+            border: 1px solid var(--brass-dark);
+            font-family: 'Cinzel', serif;
+            font-size: 11px;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
@@ -362,32 +1027,36 @@
         }
         
         .btn-primary {
-            background: var(--accent);
-            color: white;
+            background: linear-gradient(135deg, var(--brass-dark), var(--brass));
+            color: var(--bg-stone);
         }
         
         .btn-primary:hover {
-            background: var(--accent-light);
+            box-shadow: var(--glow-brass);
         }
         
         .btn-secondary {
-            background: var(--bg-card);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
+            background: var(--bg-stone);
+            color: var(--text-light);
+            border-color: var(--bronze);
         }
         
         .btn-secondary:hover {
-            background: var(--bg-secondary);
+            background: var(--bronze);
+            border-color: var(--brass);
         }
         
         .btn-danger {
-            background: var(--red);
-            color: white;
+            background: linear-gradient(135deg, var(--crimson), var(--crimson-light));
+            color: var(--text-light);
+            border-color: var(--crimson);
         }
         
+        /* File List - Artifact Grid */
         .file-list {
-            background: var(--bg-card);
-            border-radius: 12px;
+            background: var(--bg-stone);
+            border: 2px solid var(--bronze);
+            border-radius: 6px;
             overflow: hidden;
         }
         
@@ -395,10 +1064,10 @@
             display: flex;
             align-items: center;
             padding: 12px 16px;
-            gap: 12px;
+            gap: 14px;
             cursor: pointer;
             transition: all 0.2s;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--bronze-dark);
         }
         
         .file-item:last-child {
@@ -406,37 +1075,219 @@
         }
         
         .file-item:hover {
-            background: var(--bg-secondary);
+            background: linear-gradient(90deg, rgba(181, 166, 66, 0.1), transparent);
+            border-left: 3px solid var(--brass);
+            padding-left: 13px;
         }
         
-        .file-item.selected {
-            background: rgba(124, 58, 237, 0.2);
-        }
-        
+        /* File Icons - Artifacts */
         .file-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
+            width: 44px;
+            height: 44px;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 18px;
             flex-shrink: 0;
+            border: 2px solid;
+            position: relative;
+            transition: all 0.3s ease;
         }
         
+        /* ===== QUALITY SYSTEM ===== */
+        /* Common - Gray */
+        .file-icon.quality-common {
+            border-color: #6a6a6a;
+        }
+        
+        /* Uncommon - Green */
+        .file-icon.quality-uncommon {
+            border-color: #4a9a4a;
+            box-shadow: 0 0 8px rgba(74, 154, 74, 0.4);
+        }
+        .file-icon.quality-uncommon::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border: 1px solid rgba(74, 154, 74, 0.3);
+            border-radius: 5px;
+        }
+        
+        /* Rare - Blue */
+        .file-icon.quality-rare {
+            border-color: #4a8aca;
+            box-shadow: 0 0 10px rgba(74, 138, 202, 0.5);
+            animation: rareGlow 2s ease-in-out infinite;
+        }
+        @keyframes rareGlow {
+            0%, 100% { box-shadow: 0 0 8px rgba(74, 138, 202, 0.4); }
+            50% { box-shadow: 0 0 15px rgba(74, 138, 202, 0.7); }
+        }
+        
+        /* Epic - Purple (Enhanced) */
+        .file-icon.quality-epic {
+            border-color: #9a5aca;
+            box-shadow: 
+                inset 0 0 15px rgba(154, 90, 202, 0.2),
+                0 0 12px rgba(154, 90, 202, 0.6);
+            animation: epicGlow 1.5s ease-in-out infinite;
+            position: relative;
+        }
+        .file-icon.quality-epic::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            width: 8px;
+            height: 8px;
+            border-top: 2px solid #9a5aca;
+            border-left: 2px solid #9a5aca;
+        }
+        .file-icon.quality-epic::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
+            border-bottom: 2px solid #9a5aca;
+            border-right: 2px solid #9a5aca;
+        }
+        @keyframes epicGlow {
+            0%, 100% { box-shadow: inset 0 0 15px rgba(154, 90, 202, 0.2), 0 0 10px rgba(154, 90, 202, 0.5); }
+            50% { box-shadow: inset 0 0 20px rgba(154, 90, 202, 0.3), 0 0 20px rgba(154, 90, 202, 0.8), 0 0 30px rgba(154, 90, 202, 0.3); }
+        }
+        
+        /* Legendary - Gold (Enhanced with corner ornaments) */
+        .file-icon.quality-legendary {
+            border: none;
+            position: relative;
+            box-shadow: 
+                inset 0 0 20px rgba(255, 170, 0, 0.3),
+                inset 0 0 40px rgba(255, 170, 0, 0.1),
+                0 0 15px rgba(181, 166, 66, 0.7);
+            animation: legendaryGlow 2s ease-in-out infinite;
+        }
+        /* Угловые орнаменты */
+        .file-icon.quality-legendary::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            width: 12px;
+            height: 12px;
+            border-top: 2px solid #ffaa00;
+            border-left: 2px solid #ffaa00;
+            box-shadow: -2px -2px 8px rgba(255, 170, 0, 0.5);
+        }
+        .file-icon.quality-legendary::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            right: -3px;
+            width: 12px;
+            height: 12px;
+            border-bottom: 2px solid #ffaa00;
+            border-right: 2px solid #ffaa00;
+            box-shadow: 2px 2px 8px rgba(255, 170, 0, 0.5);
+        }
+        @keyframes legendaryGlow {
+            0%, 100% { box-shadow: inset 0 0 20px rgba(255, 170, 0, 0.3), 0 0 12px rgba(181, 166, 66, 0.6); }
+            50% { box-shadow: inset 0 0 30px rgba(255, 170, 0, 0.5), 0 0 25px rgba(181, 166, 66, 0.9), 0 0 40px rgba(181, 166, 66, 0.4); }
+        }
+        
+        /* Legendary shimmer border */
+        .file-item:has(.quality-legendary) {
+            position: relative;
+            overflow: visible;
+        }
+        .file-item:has(.quality-legendary)::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(90deg, transparent, rgba(255, 170, 0, 0.6), transparent);
+            background-size: 200% 100%;
+            animation: borderShimmer 3s ease-in-out infinite;
+            border-radius: 6px;
+            z-index: -1;
+            opacity: 0.5;
+        }
+        @keyframes borderShimmer {
+            0%, 100% { background-position: -200% 0; }
+            50% { background-position: 200% 0; }
+        }
+        
+        /* ===== STATUS BADGES ===== */
+        .file-status {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            font-size: 10px;
+            background: var(--bg-stone);
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--bronze);
+        }
+        
+        .file-status.recent { background: #2a4a3a; } /* ⚡ */
+        .file-status.locked { background: #4a3a2a; } /* 🔒 */
+        .file-status.starred { background: #4a4a2a; } /* ⭐ */
+        .file-status.dusty { background: #3a3a3a; } /* 🕸️ */
+        
+        /* Folder = Chest */
         .file-icon.folder {
-            background: linear-gradient(135deg, var(--gold), #f59e0b);
+            background: linear-gradient(135deg, #5c4a32, #3d3222);
+            border-color: var(--brass);
+            box-shadow: inset 0 -2px 4px rgba(0,0,0,0.3);
         }
         
+        /* PDF = Sealed Scroll */
+        .file-icon.file-pdf {
+            background: linear-gradient(135deg, var(--crimson), #4a1f24);
+            border-color: #8b3a3a;
+        }
+        
+        /* MD = Parchment */
+        .file-icon.file-md {
+            background: linear-gradient(135deg, var(--bg-parchment), var(--bg-parchment-dark));
+            border-color: #9a8a6e;
+            color: #3d3222;
+        }
+        
+        /* PY = Artifact */
+        .file-icon.file-py {
+            background: linear-gradient(135deg, #2d5a8a, #1a3a5c);
+            border-color: var(--magic-blue-dim);
+        }
+        
+        /* JS = Lightning */
+        .file-icon.file-js {
+            background: linear-gradient(135deg, #8a7a2a, #5c5020);
+            border-color: var(--brass);
+        }
+        
+        /* JSON = Mechanical */
+        .file-icon.file-json {
+            background: linear-gradient(135deg, #3a5a4a, #2a4038);
+            border-color: #4a7a5a;
+        }
+        
+        /* HTML = Portal */
+        .file-icon.file-html {
+            background: linear-gradient(135deg, #6a3a2a, #4a2a1a);
+            border-color: #8a4a3a;
+        }
+        
+        /* Default file */
         .file-icon.file {
-            background: var(--bg-secondary);
+            background: var(--bg-stone-light);
+            border-color: var(--bronze);
         }
-        
-        .file-icon.file-md { background: linear-gradient(135deg, var(--blue), #60a5fa); }
-        .file-icon.file-py { background: linear-gradient(135deg, #3776ab, #ffd43b); }
-        .file-icon.file-js { background: linear-gradient(135deg, #f7df1e, #f0db4f); color: #000; }
-        .file-icon.file-json { background: linear-gradient(135deg, var(--green), #4ade80); }
-        .file-icon.file-html { background: linear-gradient(135deg, #e34c26, #f06529); }
         
         .file-info {
             flex: 1;
@@ -444,17 +1295,26 @@
         }
         
         .file-name {
-            font-size: 14px;
+            font-family: 'Cinzel', serif;
+            font-size: 13px;
             font-weight: 500;
+            color: var(--text-light);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         
         .file-meta {
-            font-size: 11px;
-            color: var(--text-secondary);
+            font-size: 10px;
+            color: var(--text-dim);
             margin-top: 2px;
+            font-style: italic;
+        }
+        
+        /* Location Names Mapping */
+        .location-name {
+            font-family: 'Cinzel', serif;
+            color: var(--brass);
         }
         
         /* Editor */
@@ -473,33 +1333,36 @@
             align-items: center;
             gap: 12px;
             padding-bottom: 12px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--bronze);
             margin-bottom: 12px;
         }
         
         .editor-title {
             flex: 1;
+            font-family: 'Cinzel', serif;
             font-size: 14px;
             font-weight: 600;
+            color: var(--brass);
         }
         
         .editor-textarea {
             flex: 1;
             width: 100%;
-            background: var(--bg-card);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
+            background: var(--bg-stone);
+            color: var(--text-light);
+            border: 2px solid var(--bronze);
+            border-radius: 4px;
             padding: 16px;
             font-family: 'Fira Code', 'Consolas', monospace;
             font-size: 13px;
-            line-height: 1.5;
+            line-height: 1.6;
             resize: none;
             outline: none;
         }
         
         .editor-textarea:focus {
-            border-color: var(--accent);
+            border-color: var(--brass);
+            box-shadow: var(--glow-brass);
         }
         
         .editor-footer {
@@ -508,12 +1371,13 @@
             align-items: center;
             padding-top: 12px;
             margin-top: 12px;
-            border-top: 1px solid var(--border);
+            border-top: 1px solid var(--bronze);
         }
         
         .editor-status {
-            font-size: 12px;
-            color: var(--text-secondary);
+            font-size: 11px;
+            color: var(--text-dim);
+            font-style: italic;
         }
         
         /* Modal */
@@ -524,7 +1388,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
             z-index: 200;
             align-items: center;
             justify-content: center;
@@ -535,33 +1399,38 @@
         }
         
         .modal {
-            background: var(--bg-card);
-            border-radius: 16px;
+            background: linear-gradient(180deg, var(--bg-stone-light), var(--bg-stone));
+            border: 2px solid var(--brass);
+            border-radius: 8px;
             padding: 24px;
             width: 90%;
             max-width: 400px;
+            box-shadow: var(--shadow-deep), var(--glow-brass);
         }
         
         .modal-title {
+            font-family: 'Cinzel', serif;
             font-size: 18px;
             font-weight: 600;
+            color: var(--brass);
             margin-bottom: 16px;
         }
         
         .modal-input {
             width: 100%;
             padding: 12px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
+            background: var(--bg-stone);
+            border: 1px solid var(--bronze);
+            border-radius: 4px;
+            color: var(--text-light);
+            font-family: 'Crimson Text', serif;
             font-size: 14px;
             margin-bottom: 16px;
             outline: none;
         }
         
         .modal-input:focus {
-            border-color: var(--accent);
+            border-color: var(--brass);
         }
         
         .modal-actions {
@@ -574,14 +1443,14 @@
         .loading {
             text-align: center;
             padding: 40px;
-            color: var(--text-secondary);
+            color: var(--text-dim);
         }
         
         .spinner {
-            width: 32px;
-            height: 32px;
-            border: 3px solid var(--border);
-            border-top-color: var(--accent);
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--bronze);
+            border-top-color: var(--brass);
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 0 auto 12px;
@@ -593,41 +1462,84 @@
         
         .last-update {
             text-align: center;
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-top: 16px;
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-top: 20px;
+            font-style: italic;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-stone);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--bronze);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--brass-dark);
         }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
+    <!-- Particle container -->
+    <div class="particles" id="particles"></div>
+    
+    <!-- Navigation - Brass Frame -->
     <nav class="nav">
-        <div class="nav-item active" data-tab="dashboard">
-            <div class="nav-icon">🎮</div>
-            <div>Dashboard</div>
+        <div class="nav-item active" data-tab="sanctum">
+            <span class="nav-icon">🏛️</span>
+            <span>Sanctum</span>
         </div>
         <div class="nav-item" data-tab="files">
-            <div class="nav-icon">📁</div>
-            <div>Files</div>
+            <span class="nav-icon">📜</span>
+            <span>Archives</span>
         </div>
     </nav>
     
     <!-- Content -->
     <div class="content">
-        <!-- Dashboard Tab -->
-        <div id="tab-dashboard" class="tab-content active">
-            <div class="character-header">
-                <div class="character-top">
-                    <div class="avatar">🧙</div>
+        <!-- Sanctum Tab (Dashboard) -->
+        <div id="tab-sanctum" class="tab-content active">
+            <div class="sanctum-header">
+                <div class="character-row">
+                    <div class="character-portrait">
+                        <div class="archivarius">
+                            <div class="arch-body"></div>
+                            <div class="arch-head"></div>
+                            <div class="arch-goggles">
+                                <div class="goggle-lens"></div>
+                                <div class="goggle-lens"></div>
+                            </div>
+                            <div class="arch-mech-arm"></div>
+                            <div class="corvus">
+                                <div class="corvus-wing left"></div>
+                                <div class="corvus-wing right"></div>
+                                <div class="corvus-body"></div>
+                                <div class="corvus-head">
+                                    <div class="corvus-eye left"></div>
+                                    <div class="corvus-eye right"></div>
+                                </div>
+                                <div class="corvus-beak"></div>
+                                <div class="corvus-crystal"></div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="character-info">
-                        <h1 id="charName">Помощник Микаела</h1>
-                        <div class="character-title" id="charTitle">Хранитель Контекста</div>
+                        <h1 id="charName">Архивариус</h1>
+                        <div class="character-title" id="charTitle">Хранитель Свитков</div>
                     </div>
                 </div>
-                <div class="level-section">
+                <div class="level-gauge">
                     <div class="level-row">
-                        <span class="level-badge" id="levelBadge">Ур. 1</span>
-                        <span class="xp-text"><span id="xpCurrent">0</span>/<span id="xpTotal">100</span> XP</span>
+                        <span class="level-badge" id="levelBadge">Уровень I</span>
+                        <span class="xp-text"><span id="xpCurrent">0</span>/<span id="xpTotal">100</span> ✧</span>
                     </div>
                     <div class="xp-bar">
                         <div class="xp-fill" id="xpFill" style="width: 0%"></div>
@@ -636,16 +1548,16 @@
             </div>
             
             <div class="card">
-                <div class="card-title">⚔️ Характеристики</div>
+                <div class="card-title">⚔️ Атрибуты</div>
                 <div class="stats-grid" id="statsGrid"></div>
             </div>
             
             <div class="card">
-                <div class="card-title">📜 Активные квесты</div>
+                <div class="card-title">📋 Активные контракты</div>
                 <div id="questsList">
                     <div class="empty-state">
-                        <div class="empty-state-icon">🎯</div>
-                        <div>Нет активных квестов</div>
+                        <div class="empty-state-icon">📭</div>
+                        <div>Нет активных контрактов</div>
                     </div>
                 </div>
             </div>
@@ -653,34 +1565,32 @@
             <div class="last-update" id="lastUpdate">Загрузка...</div>
         </div>
         
-        <!-- Files Tab -->
+        <!-- Files Tab (Archives) -->
         <div id="tab-files" class="tab-content">
-            <!-- File Browser -->
             <div id="fileBrowser">
                 <div class="files-header">
                     <div class="breadcrumb" id="breadcrumb">
-                        <span class="breadcrumb-item current">BRANDONLINE</span>
+                        <span class="breadcrumb-item current">🏛️ Sanctum Operandi</span>
                     </div>
                     <div class="files-actions">
-                        <button class="btn btn-secondary" onclick="createFolder()">📁+</button>
-                        <button class="btn btn-secondary" onclick="createFile()">📄+</button>
-                        <button class="btn btn-secondary" onclick="loadFiles()">🔄</button>
+                        <button class="btn btn-secondary" onclick="createFolder()">📁</button>
+                        <button class="btn btn-secondary" onclick="createFile()">📜</button>
+                        <button class="btn btn-secondary" onclick="loadFiles()">⟳</button>
                     </div>
                 </div>
                 
                 <div class="file-list" id="fileList">
                     <div class="loading">
                         <div class="spinner"></div>
-                        <div>Загрузка файлов...</div>
+                        <div>Открываю архивы...</div>
                     </div>
                 </div>
             </div>
             
-            <!-- Editor -->
             <div id="fileEditor" class="editor-container">
                 <div class="editor-header">
                     <button class="btn btn-secondary" onclick="closeEditor()">← Назад</button>
-                    <div class="editor-title" id="editorTitle">file.txt</div>
+                    <div class="editor-title" id="editorTitle">document.txt</div>
                     <button class="btn btn-primary" onclick="saveFile()">💾 Сохранить</button>
                 </div>
                 
@@ -688,7 +1598,7 @@
                 
                 <div class="editor-footer">
                     <span class="editor-status" id="editorStatus">Готово</span>
-                    <button class="btn btn-danger" onclick="deleteCurrentFile()">🗑️ Удалить</button>
+                    <button class="btn btn-danger" onclick="deleteCurrentFile()">🔥 Сжечь</button>
                 </div>
             </div>
         </div>
@@ -714,14 +1624,215 @@
             tg.expand();
         }
         
+        // Location name mapping (folder → location)
+        const locationNames = {
+            'Загрузки': '⚓ Причал Прибытия',
+            'Jarvis.Mir': '🔮 Башня Оракула',
+            'АРХИВ': '🏚️ Катакомбы Памяти',
+            'КЛИЕНТЫ': '📜 Зал Контрактов',
+            'ПОСТОЯННОЕ': '🏆 Хранилище Реликвий',
+            'МИКАЕЛ ДЕЛОПРОИЗВОДСТВО': '⚙️ Канцелярия Механикус',
+            'Корзина': '🔥 Алхимическая Печь'
+        };
+        
+        // Location CSS mapping (folder → data-location attribute)
+        const locationStyles = {
+            'Загрузки': 'downloads',
+            'Downloads': 'downloads',
+            'Jarvis.Mir': 'oracle',
+            'АРХИВ': 'archive',
+            'Архив': 'archive',
+            'КЛИЕНТЫ': 'clients',
+            'Клиенты': 'clients',
+            'ПОСТОЯННОЕ': 'vault',
+            'МИКАЕЛ ДЕЛОПРОИЗВОДСТВО': 'workflow',
+            'Делопроизводство': 'workflow',
+            'Корзина': 'furnace',
+            'Trash': 'furnace'
+        };
+        
+        // ===== SOUND SYSTEM =====
+        const SoundSystem = {
+            enabled: true,
+            volume: 0.3,
+            sounds: {
+                click: null,
+                open_folder: null,
+                open_file: null,
+                transition: null,
+                ambient: {}
+            },
+            currentAmbient: null,
+            
+            // Генерация звуков через Web Audio API
+            ctx: null,
+            
+            init() {
+                try {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.log('Audio not available');
+                    this.enabled = false;
+                }
+            },
+            
+            // Синтетический клик (механический)
+            playClick() {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(200, this.ctx.currentTime + 0.05);
+                gain.gain.setValueAtTime(this.volume * 0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.05);
+            },
+            
+            // Звук открытия папки (deeper tone)
+            playOpenFolder() {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(this.volume * 0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.15);
+            },
+            
+            // Звук открытия файла (scroll unrolling)
+            playOpenFile() {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(600, this.ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(this.volume * 0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.1);
+            },
+            
+            // Звук перехода между локациями
+            playTransition(location) {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const osc2 = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                osc2.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                osc.type = 'sine';
+                osc2.type = 'sine';
+                
+                // Разные тона для разных локаций
+                const tones = {
+                    downloads: [200, 300],
+                    oracle: [500, 700],
+                    archive: [150, 200],
+                    clients: [350, 450],
+                    vault: [400, 600],
+                    workflow: [250, 350],
+                    furnace: [180, 250]
+                };
+                
+                const [f1, f2] = tones[location] || [300, 400];
+                
+                osc.frequency.setValueAtTime(f1, this.ctx.currentTime);
+                osc2.frequency.setValueAtTime(f2, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(f1 * 1.5, this.ctx.currentTime + 0.2);
+                osc2.frequency.exponentialRampToValueAtTime(f2 * 0.8, this.ctx.currentTime + 0.2);
+                
+                gain.gain.setValueAtTime(this.volume * 0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+                
+                osc.start();
+                osc2.start();
+                osc.stop(this.ctx.currentTime + 0.3);
+                osc2.stop(this.ctx.currentTime + 0.3);
+            },
+            
+            // Механический карк Corvus
+            playCorvusCaw() {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, this.ctx.currentTime + 0.1);
+                osc.frequency.exponentialRampToValueAtTime(500, this.ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(this.volume * 0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.2);
+            }
+        };
+        
+        // Initialize sound on first user interaction
+        document.addEventListener('click', () => {
+            if (!SoundSystem.ctx) SoundSystem.init();
+        }, { once: true });
+        
         // State
         let currentPath = '';
         let currentFile = null;
         let fileModified = false;
         
+        // ===== PARTICLE EFFECTS =====
+        function createParticles(x, y, count = 8) {
+            const container = document.getElementById('particles');
+            const colors = ['#7DF9FF', '#B5A642', '#d4c76a'];
+            
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Random direction
+                const angle = (Math.PI * 2 * i) / count;
+                const velocity = 30 + Math.random() * 50;
+                const dx = Math.cos(angle) * velocity;
+                const dy = Math.sin(angle) * velocity;
+                
+                particle.style.setProperty('--dx', dx + 'px');
+                particle.style.setProperty('--dy', dy + 'px');
+                particle.style.animation = `particleFly 0.6s ease-out forwards`;
+                particle.style.transform = `translate(${dx}px, ${dy}px)`;
+                
+                container.appendChild(particle);
+                
+                setTimeout(() => particle.remove(), 600);
+            }
+        }
+        
+        // Add particles and sound on file click
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.file-item') || e.target.closest('.quest-item')) {
+                createParticles(e.clientX, e.clientY, 6);
+                if (SoundSystem.ctx) SoundSystem.playClick();
+            }
+        });
+        
         // Navigation
         document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => {
+            item.addEventListener('click', (e) => {
+                createParticles(e.clientX, e.clientY, 10);
+                
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
                 
@@ -734,7 +1845,7 @@
             });
         });
         
-        // ===== DASHBOARD =====
+        // ===== SANCTUM (Dashboard) =====
         
         async function loadDashboard() {
             try {
@@ -750,12 +1861,14 @@
         function renderDashboard(data) {
             const char = data.character || {};
             
-            document.getElementById('charName').textContent = char.name || 'Помощник Микаела';
-            document.getElementById('charTitle').textContent = char.title || 'Хранитель Контекста';
+            document.getElementById('charName').textContent = char.name || 'Архивариус';
+            document.getElementById('charTitle').textContent = char.title || 'Хранитель Свитков';
             
             const level = char.level || 1;
+            const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
             const xp = char.xp || { current: 0, total: 100 };
-            document.getElementById('levelBadge').textContent = `Ур. ${level}`;
+            
+            document.getElementById('levelBadge').textContent = `Уровень ${romanNumerals[level-1] || level}`;
             document.getElementById('xpCurrent').textContent = xp.current;
             document.getElementById('xpTotal').textContent = xp.total;
             document.getElementById('xpFill').style.width = `${(xp.current / xp.total) * 100}%`;
@@ -771,7 +1884,7 @@
                 div.className = 'stat-item';
                 div.innerHTML = `
                     <div class="stat-header">
-                        <span class="stat-name">${statIcons[key] || '📊'} ${stat.label || key}</span>
+                        <span class="stat-name">${statIcons[key] || '◈'} ${stat.label || key}</span>
                         <span class="stat-value">${stat.value || 0}</span>
                     </div>
                     <div class="stat-bar">
@@ -792,7 +1905,7 @@
                             <div class="quest-name">${q.name}</div>
                             <div class="quest-progress">${q.description || ''}</div>
                         </div>
-                        ${q.reward ? `<div class="quest-reward">+${q.reward} XP</div>` : ''}
+                        ${q.reward ? `<div class="quest-reward">+${q.reward} ✧</div>` : ''}
                     </div>
                 `).join('');
             }
@@ -805,7 +1918,22 @@
             const fileList = document.getElementById('fileList');
             fileList.dataset.loaded = 'true';
             
-            fileList.innerHTML = '<div class="loading"><div class="spinner"></div><div>Загрузка...</div></div>';
+            // Определяем локацию для атмосферы
+            const pathParts = path ? path.split('/').filter(Boolean) : [];
+            const currentFolder = pathParts[pathParts.length - 1] || '';
+            const locationStyle = locationStyles[currentFolder] || '';
+            
+            // Устанавливаем атмосферу локации
+            fileList.dataset.location = locationStyle;
+            
+            // Проигрываем звук перехода
+            if (locationStyle && SoundSystem.ctx) {
+                SoundSystem.playTransition(locationStyle);
+            } else if (SoundSystem.ctx) {
+                SoundSystem.playOpenFolder();
+            }
+            
+            fileList.innerHTML = '<div class="loading"><div class="spinner"></div><div>Открываю архивы...</div></div>';
             
             try {
                 const response = await fetch(`/api/files?path=${encodeURIComponent(path)}`);
@@ -818,7 +1946,7 @@
                 renderBreadcrumb(path);
                 renderFiles(data.items, data.parent);
             } catch (error) {
-                fileList.innerHTML = `<div class="empty-state"><div class="empty-state-icon">❌</div><div>${error.message}</div></div>`;
+                fileList.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div>${error.message}</div></div>`;
             }
         }
         
@@ -826,14 +1954,15 @@
             const breadcrumb = document.getElementById('breadcrumb');
             const parts = path ? path.split('/').filter(Boolean) : [];
             
-            let html = `<span class="breadcrumb-item ${!path ? 'current' : ''}" onclick="loadFiles('')">🏠 BRANDONLINE</span>`;
+            let html = `<span class="breadcrumb-item ${!path ? 'current' : ''}" onclick="loadFiles('')">🏛️ Sanctum</span>`;
             
             let currentPathBuild = '';
             parts.forEach((part, i) => {
                 currentPathBuild += (currentPathBuild ? '/' : '') + part;
                 const isLast = i === parts.length - 1;
+                const displayName = locationNames[part] || part;
                 html += `<span class="breadcrumb-sep">›</span>`;
-                html += `<span class="breadcrumb-item ${isLast ? 'current' : ''}" onclick="loadFiles('${currentPathBuild}')">${part}</span>`;
+                html += `<span class="breadcrumb-item ${isLast ? 'current' : ''}" onclick="loadFiles('${currentPathBuild}')">${displayName}</span>`;
             });
             
             breadcrumb.innerHTML = html;
@@ -843,26 +1972,65 @@
             const fileList = document.getElementById('fileList');
             
             if (!items || items.length === 0) {
-                fileList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div>Папка пуста</div></div>';
+                fileList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div>Пустой архив</div></div>';
                 return;
             }
             
             const getIcon = (item) => {
-                if (item.type === 'folder') return { icon: '📁', class: 'folder' };
+                if (item.type === 'folder') return { icon: '📦', class: 'folder' };
                 const ext = item.extension || '';
                 const icons = {
-                    '.md': { icon: '📝', class: 'file-md' },
-                    '.py': { icon: '🐍', class: 'file-py' },
+                    '.md': { icon: '📜', class: 'file-md' },
+                    '.py': { icon: '⚗️', class: 'file-py' },
                     '.js': { icon: '⚡', class: 'file-js' },
-                    '.json': { icon: '📊', class: 'file-json' },
-                    '.html': { icon: '🌐', class: 'file-html' },
+                    '.json': { icon: '⚙️', class: 'file-json' },
+                    '.html': { icon: '🌀', class: 'file-html' },
+                    '.pdf': { icon: '📕', class: 'file-pdf' },
                     '.css': { icon: '🎨', class: 'file' },
                     '.txt': { icon: '📄', class: 'file' },
-                    '.env': { icon: '⚙️', class: 'file' },
-                    '.bat': { icon: '🖥️', class: 'file' },
-                    '.ps1': { icon: '💻', class: 'file' },
+                    '.env': { icon: '🔒', class: 'file' },
+                    '.bat': { icon: '⚙️', class: 'file' },
+                    '.ps1': { icon: '💠', class: 'file' },
                 };
                 return icons[ext] || { icon: '📄', class: 'file' };
+            };
+            
+            // Quality based on file importance
+            const getQuality = (item) => {
+                const name = item.name.toLowerCase();
+                const ext = item.extension || '';
+                const size = item.size || 0;
+                
+                // Legendary - critical system files
+                if (name.includes('skill.md') || name.includes('memory') || name === 'user.md' || name === 'soul.md') {
+                    return 'legendary';
+                }
+                // Epic - important configs and main files
+                if (name.includes('config') || name === 'agents.md' || name.includes('knowledge') || ext === '.env') {
+                    return 'epic';
+                }
+                // Rare - code files
+                if (['.py', '.js', '.html', '.css'].includes(ext)) {
+                    return 'rare';
+                }
+                // Uncommon - documents
+                if (['.md', '.pdf', '.docx', '.txt'].includes(ext) && size > 1000) {
+                    return 'uncommon';
+                }
+                // Common - everything else
+                return 'common';
+            };
+            
+            // Status badges
+            const getStatus = (item) => {
+                const now = new Date();
+                const modified = new Date(item.modified);
+                const daysSince = (now - modified) / (1000 * 60 * 60 * 24);
+                
+                if (daysSince < 1) return { icon: '⚡', class: 'recent' }; // Recently modified
+                if (daysSince > 30) return { icon: '🕸️', class: 'dusty' }; // Old file
+                if (item.name.includes('ПОСТОЯННОЕ')) return { icon: '⭐', class: 'starred' };
+                return null;
             };
             
             const formatSize = (bytes) => {
@@ -875,21 +2043,29 @@
             const formatDate = (iso) => {
                 if (!iso) return '';
                 const d = new Date(iso);
-                return d.toLocaleDateString('ru-RU') + ' ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                return d.toLocaleDateString('ru-RU');
             };
             
             fileList.innerHTML = items.map(item => {
                 const { icon, class: iconClass } = getIcon(item);
+                const quality = item.type === 'folder' ? '' : `quality-${getQuality(item)}`;
+                const status = getStatus(item);
                 const path = currentPath ? `${currentPath}/${item.name}` : item.name;
+                const displayName = item.type === 'folder' ? (locationNames[item.name] || item.name) : item.name;
                 const meta = item.type === 'folder' 
                     ? formatDate(item.modified)
-                    : `${formatSize(item.size)} • ${formatDate(item.modified)}`;
+                    : `${formatSize(item.size)} · ${formatDate(item.modified)}`;
+                
+                const statusBadge = status ? `<span class="file-status ${status.class}">${status.icon}</span>` : '';
                 
                 return `
                     <div class="file-item" onclick="${item.type === 'folder' ? `loadFiles('${path}')` : `openFile('${path}')`}">
-                        <div class="file-icon ${iconClass}">${icon}</div>
+                        <div class="file-icon ${iconClass} ${quality}">
+                            ${icon}
+                            ${statusBadge}
+                        </div>
                         <div class="file-info">
-                            <div class="file-name">${item.name}</div>
+                            <div class="file-name">${displayName}</div>
                             <div class="file-meta">${meta}</div>
                         </div>
                     </div>
@@ -898,6 +2074,9 @@
         }
         
         async function openFile(path) {
+            // Звук открытия файла
+            if (SoundSystem.ctx) SoundSystem.playOpenFile();
+            
             try {
                 const response = await fetch(`/api/file?path=${encodeURIComponent(path)}`);
                 const data = await response.json();
@@ -907,7 +2086,7 @@
                 }
                 
                 if (data.type !== 'text') {
-                    alert(data.message || 'Cannot open binary file');
+                    alert(data.message || 'Нельзя открыть бинарный файл');
                     return;
                 }
                 
@@ -958,17 +2137,17 @@
                 }
                 
                 fileModified = false;
-                status.textContent = `✅ Сохранено (${data.size} символов)`;
+                status.textContent = `✓ Сохранено (${data.size} символов)`;
                 
             } catch (error) {
-                status.textContent = '❌ Ошибка: ' + error.message;
+                status.textContent = '✗ Ошибка: ' + error.message;
             }
         }
         
         async function deleteCurrentFile() {
             if (!currentFile) return;
             
-            if (!confirm(`Удалить файл "${currentFile}"?`)) {
+            if (!confirm(`Сжечь "${currentFile}" в Алхимической Печи?`)) {
                 return;
             }
             
@@ -990,7 +2169,6 @@
             }
         }
         
-        // Track modifications
         document.getElementById('editorContent').addEventListener('input', () => {
             fileModified = true;
             document.getElementById('editorStatus').textContent = '• Изменено';
@@ -1027,9 +2205,8 @@
             }
         });
         
-        // Create folder
         function createFolder() {
-            showModal('Новая папка', 'Название папки', async (name) => {
+            showModal('Новый сундук', 'Название', async (name) => {
                 const path = currentPath ? `${currentPath}/${name}` : name;
                 try {
                     const response = await fetch('/api/folder', {
@@ -1050,9 +2227,8 @@
             });
         }
         
-        // Create file
         function createFile() {
-            showModal('Новый файл', 'Название файла (с расширением)', async (name) => {
+            showModal('Новый свиток', 'Название (с расширением)', async (name) => {
                 const path = currentPath ? `${currentPath}/${name}` : name;
                 try {
                     const response = await fetch('/api/file', {
