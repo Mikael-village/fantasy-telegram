@@ -136,6 +136,11 @@ async def chat_page():
     """Страница чата"""
     return await root()
 
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard():
+    """Dashboard (alias для Mini App)"""
+    return await root()
+
 @app.get("/api/data")
 async def get_data():
     """Получить данные персонажа"""
