@@ -32,8 +32,60 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Navigation */
+        .nav {
+            display: flex;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .nav-item {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .nav-item.active {
+            color: var(--accent-light);
+            border-bottom-color: var(--accent);
+        }
+        
+        .nav-icon {
+            font-size: 18px;
+            margin-bottom: 2px;
+        }
+        
+        /* Content */
+        .content {
+            flex: 1;
             padding: 16px;
-            padding-bottom: 80px;
+            padding-bottom: 20px;
+            overflow-y: auto;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
         }
         
         /* Character Header */
@@ -87,11 +139,6 @@
             font-weight: 500;
         }
         
-        .character-class {
-            color: var(--text-secondary);
-            font-size: 12px;
-        }
-        
         /* Level & XP */
         .level-section {
             background: rgba(0,0,0,0.2);
@@ -134,7 +181,7 @@
             transition: width 0.5s ease;
         }
         
-        /* Stats Card */
+        /* Card */
         .card {
             background: var(--bg-card);
             border-radius: 16px;
@@ -151,6 +198,7 @@
             gap: 8px;
         }
         
+        /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -174,7 +222,6 @@
             font-size: 11px;
             color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
         
         .stat-value {
@@ -194,10 +241,9 @@
             height: 100%;
             background: var(--accent);
             border-radius: 2px;
-            transition: width 0.5s ease;
         }
         
-        /* Quests */
+        /* Quest Item */
         .quest-item {
             background: var(--bg-secondary);
             border-radius: 12px;
@@ -219,9 +265,7 @@
             font-size: 18px;
         }
         
-        .quest-info {
-            flex: 1;
-        }
+        .quest-info { flex: 1; }
         
         .quest-name {
             font-size: 14px;
@@ -243,15 +287,6 @@
             font-weight: 600;
         }
         
-        .quest-item.completed {
-            opacity: 0.6;
-        }
-        
-        .quest-item.completed .quest-icon {
-            background: var(--green);
-        }
-        
-        /* Empty state */
         .empty-state {
             text-align: center;
             padding: 24px;
@@ -263,118 +298,413 @@
             margin-bottom: 8px;
         }
         
-        /* Refresh button */
-        .refresh-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: var(--accent);
-            border: none;
-            color: white;
-            font-size: 24px;
+        /* ===== FILE MANAGER ===== */
+        
+        .files-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+            min-width: 0;
+            overflow-x: auto;
+            padding: 8px 0;
+        }
+        
+        .breadcrumb-item {
+            color: var(--text-secondary);
+            font-size: 13px;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+            white-space: nowrap;
+            padding: 4px 8px;
+            border-radius: 6px;
             transition: all 0.2s;
         }
         
-        .refresh-btn:hover {
-            transform: scale(1.05);
+        .breadcrumb-item:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
         }
         
-        .refresh-btn:active {
-            transform: scale(0.95);
+        .breadcrumb-item.current {
+            color: var(--accent-light);
+            font-weight: 500;
         }
         
-        .refresh-btn.loading {
+        .breadcrumb-sep {
+            color: var(--border);
+            font-size: 12px;
+        }
+        
+        .files-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--accent-light);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .btn-danger {
+            background: var(--red);
+            color: white;
+        }
+        
+        .file-list {
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        
+        .file-item:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .file-item.selected {
+            background: rgba(124, 58, 237, 0.2);
+        }
+        
+        .file-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .file-icon.folder {
+            background: linear-gradient(135deg, var(--gold), #f59e0b);
+        }
+        
+        .file-icon.file {
+            background: var(--bg-secondary);
+        }
+        
+        .file-icon.file-md { background: linear-gradient(135deg, var(--blue), #60a5fa); }
+        .file-icon.file-py { background: linear-gradient(135deg, #3776ab, #ffd43b); }
+        .file-icon.file-js { background: linear-gradient(135deg, #f7df1e, #f0db4f); color: #000; }
+        .file-icon.file-json { background: linear-gradient(135deg, var(--green), #4ade80); }
+        .file-icon.file-html { background: linear-gradient(135deg, #e34c26, #f06529); }
+        
+        .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .file-name {
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .file-meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+        
+        /* Editor */
+        .editor-container {
+            display: none;
+            flex-direction: column;
+            height: calc(100vh - 120px);
+        }
+        
+        .editor-container.active {
+            display: flex;
+        }
+        
+        .editor-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 12px;
+        }
+        
+        .editor-title {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .editor-textarea {
+            flex: 1;
+            width: 100%;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+        }
+        
+        .editor-textarea:focus {
+            border-color: var(--accent);
+        }
+        
+        .editor-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            margin-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .editor-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            margin-bottom: 16px;
+            outline: none;
+        }
+        
+        .modal-input:focus {
+            border-color: var(--accent);
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+        
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
             animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
         }
         
         @keyframes spin {
-            from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
         
-        /* Last update */
         .last-update {
             text-align: center;
             font-size: 11px;
             color: var(--text-secondary);
             margin-top: 16px;
         }
-        
-        /* Loading skeleton */
-        .skeleton {
-            background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-secondary) 50%, var(--bg-card) 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 8px;
-        }
-        
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
     </style>
 </head>
 <body>
-    <!-- Character Header -->
-    <div class="character-header">
-        <div class="character-top">
-            <div class="avatar" id="avatar">🧙</div>
-            <div class="character-info">
-                <h1 id="charName">Помощник Микаела</h1>
-                <div class="character-title" id="charTitle">Хранитель Контекста</div>
-                <div class="character-class" id="charClass">Архимаг Автоматизации</div>
-            </div>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-item active" data-tab="dashboard">
+            <div class="nav-icon">🎮</div>
+            <div>Dashboard</div>
         </div>
-        <div class="level-section">
-            <div class="level-row">
-                <span class="level-badge" id="levelBadge">Ур. 1</span>
-                <span class="xp-text"><span id="xpCurrent">0</span>/<span id="xpTotal">100</span> XP</span>
+        <div class="nav-item" data-tab="files">
+            <div class="nav-icon">📁</div>
+            <div>Files</div>
+        </div>
+    </nav>
+    
+    <!-- Content -->
+    <div class="content">
+        <!-- Dashboard Tab -->
+        <div id="tab-dashboard" class="tab-content active">
+            <div class="character-header">
+                <div class="character-top">
+                    <div class="avatar">🧙</div>
+                    <div class="character-info">
+                        <h1 id="charName">Помощник Микаела</h1>
+                        <div class="character-title" id="charTitle">Хранитель Контекста</div>
+                    </div>
+                </div>
+                <div class="level-section">
+                    <div class="level-row">
+                        <span class="level-badge" id="levelBadge">Ур. 1</span>
+                        <span class="xp-text"><span id="xpCurrent">0</span>/<span id="xpTotal">100</span> XP</span>
+                    </div>
+                    <div class="xp-bar">
+                        <div class="xp-fill" id="xpFill" style="width: 0%"></div>
+                    </div>
+                </div>
             </div>
-            <div class="xp-bar">
-                <div class="xp-fill" id="xpFill" style="width: 0%"></div>
+            
+            <div class="card">
+                <div class="card-title">⚔️ Характеристики</div>
+                <div class="stats-grid" id="statsGrid"></div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">📜 Активные квесты</div>
+                <div id="questsList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎯</div>
+                        <div>Нет активных квестов</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="last-update" id="lastUpdate">Загрузка...</div>
+        </div>
+        
+        <!-- Files Tab -->
+        <div id="tab-files" class="tab-content">
+            <!-- File Browser -->
+            <div id="fileBrowser">
+                <div class="files-header">
+                    <div class="breadcrumb" id="breadcrumb">
+                        <span class="breadcrumb-item current">BRANDONLINE</span>
+                    </div>
+                    <div class="files-actions">
+                        <button class="btn btn-secondary" onclick="createFolder()">📁+</button>
+                        <button class="btn btn-secondary" onclick="createFile()">📄+</button>
+                        <button class="btn btn-secondary" onclick="loadFiles()">🔄</button>
+                    </div>
+                </div>
+                
+                <div class="file-list" id="fileList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <div>Загрузка файлов...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Editor -->
+            <div id="fileEditor" class="editor-container">
+                <div class="editor-header">
+                    <button class="btn btn-secondary" onclick="closeEditor()">← Назад</button>
+                    <div class="editor-title" id="editorTitle">file.txt</div>
+                    <button class="btn btn-primary" onclick="saveFile()">💾 Сохранить</button>
+                </div>
+                
+                <textarea class="editor-textarea" id="editorContent" spellcheck="false"></textarea>
+                
+                <div class="editor-footer">
+                    <span class="editor-status" id="editorStatus">Готово</span>
+                    <button class="btn btn-danger" onclick="deleteCurrentFile()">🗑️ Удалить</button>
+                </div>
             </div>
         </div>
     </div>
     
-    <!-- Stats -->
-    <div class="card">
-        <div class="card-title">⚔️ Характеристики</div>
-        <div class="stats-grid" id="statsGrid">
-            <!-- Stats will be loaded here -->
-        </div>
-    </div>
-    
-    <!-- Active Quests -->
-    <div class="card">
-        <div class="card-title">📜 Активные квесты</div>
-        <div id="questsList">
-            <div class="empty-state">
-                <div class="empty-state-icon">🎯</div>
-                <div>Нет активных квестов</div>
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <div class="modal-title" id="modalTitle">Создать</div>
+            <input type="text" class="modal-input" id="modalInput" placeholder="Название">
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+                <button class="btn btn-primary" id="modalConfirm">Создать</button>
             </div>
         </div>
     </div>
-    
-    <!-- Achievements -->
-    <div class="card">
-        <div class="card-title">🏆 Достижения</div>
-        <div id="achievementsList">
-            <div class="empty-state">
-                <div class="empty-state-icon">⭐</div>
-                <div>Достижения появятся здесь</div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="last-update" id="lastUpdate">Загрузка...</div>
-    
-    <!-- Refresh button -->
-    <button class="refresh-btn" id="refreshBtn" onclick="loadData()">🔄</button>
 
     <script>
         // Telegram WebApp
@@ -382,45 +712,47 @@
         if (tg) {
             tg.ready();
             tg.expand();
-            
-            // Apply Telegram theme
-            if (tg.themeParams.bg_color) {
-                document.documentElement.style.setProperty('--bg-primary', tg.themeParams.bg_color);
-            }
-            if (tg.themeParams.secondary_bg_color) {
-                document.documentElement.style.setProperty('--bg-secondary', tg.themeParams.secondary_bg_color);
-                document.documentElement.style.setProperty('--bg-card', tg.themeParams.secondary_bg_color);
-            }
         }
         
-        // Load data from API
-        async function loadData() {
-            const btn = document.getElementById('refreshBtn');
-            btn.classList.add('loading');
-            
+        // State
+        let currentPath = '';
+        let currentFile = null;
+        let fileModified = false;
+        
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                
+                item.classList.add('active');
+                document.getElementById('tab-' + item.dataset.tab).classList.add('active');
+                
+                if (item.dataset.tab === 'files' && !document.getElementById('fileList').dataset.loaded) {
+                    loadFiles();
+                }
+            });
+        });
+        
+        // ===== DASHBOARD =====
+        
+        async function loadDashboard() {
             try {
                 const response = await fetch('/api/data');
                 const data = await response.json();
-                renderData(data);
-                document.getElementById('lastUpdate').textContent = 
-                    'Обновлено: ' + new Date().toLocaleTimeString('ru-RU');
+                renderDashboard(data);
+                document.getElementById('lastUpdate').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU');
             } catch (error) {
-                console.error('Error loading data:', error);
-                document.getElementById('lastUpdate').textContent = 'Ошибка загрузки';
-            } finally {
-                btn.classList.remove('loading');
+                console.error('Error:', error);
             }
         }
         
-        function renderData(data) {
+        function renderDashboard(data) {
             const char = data.character || {};
             
-            // Character info
             document.getElementById('charName').textContent = char.name || 'Помощник Микаела';
             document.getElementById('charTitle').textContent = char.title || 'Хранитель Контекста';
-            document.getElementById('charClass').textContent = char.class || 'Архимаг Автоматизации';
             
-            // Level & XP
             const level = char.level || 1;
             const xp = char.xp || { current: 0, total: 100 };
             document.getElementById('levelBadge').textContent = `Ур. ${level}`;
@@ -428,7 +760,6 @@
             document.getElementById('xpTotal').textContent = xp.total;
             document.getElementById('xpFill').style.width = `${(xp.current / xp.total) * 100}%`;
             
-            // Stats
             const statsGrid = document.getElementById('statsGrid');
             const stats = char.stats || {};
             statsGrid.innerHTML = '';
@@ -450,60 +781,300 @@
                 statsGrid.appendChild(div);
             }
             
-            // Quests
             const questsList = document.getElementById('questsList');
             const quests = char.quests || [];
             
             if (quests.length > 0) {
-                questsList.innerHTML = '';
-                quests.forEach(quest => {
-                    const div = document.createElement('div');
-                    div.className = `quest-item ${quest.completed ? 'completed' : ''}`;
-                    div.innerHTML = `
-                        <div class="quest-icon">${quest.completed ? '✅' : '📋'}</div>
+                questsList.innerHTML = quests.map(q => `
+                    <div class="quest-item">
+                        <div class="quest-icon">${q.completed ? '✅' : '📋'}</div>
                         <div class="quest-info">
-                            <div class="quest-name">${quest.name || 'Квест'}</div>
-                            <div class="quest-progress">${quest.description || ''}</div>
+                            <div class="quest-name">${q.name}</div>
+                            <div class="quest-progress">${q.description || ''}</div>
                         </div>
-                        ${quest.reward ? `<div class="quest-reward">+${quest.reward} XP</div>` : ''}
-                    `;
-                    questsList.appendChild(div);
-                });
-            } else {
-                questsList.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🎯</div>
-                        <div>Нет активных квестов</div>
+                        ${q.reward ? `<div class="quest-reward">+${q.reward} XP</div>` : ''}
                     </div>
-                `;
-            }
-            
-            // Achievements
-            const achievementsList = document.getElementById('achievementsList');
-            const achievements = char.achievements || [];
-            
-            if (achievements.length > 0) {
-                achievementsList.innerHTML = '';
-                achievements.forEach(ach => {
-                    const div = document.createElement('div');
-                    div.className = 'quest-item';
-                    div.innerHTML = `
-                        <div class="quest-icon" style="background: linear-gradient(135deg, #fbbf24, #f59e0b);">🏆</div>
-                        <div class="quest-info">
-                            <div class="quest-name">${ach.name || 'Достижение'}</div>
-                            <div class="quest-progress">${ach.description || ''}</div>
-                        </div>
-                    `;
-                    achievementsList.appendChild(div);
-                });
+                `).join('');
             }
         }
         
-        // Load on start
-        loadData();
+        // ===== FILE MANAGER =====
         
-        // Auto-refresh every 30 seconds
-        setInterval(loadData, 30000);
+        async function loadFiles(path = currentPath) {
+            currentPath = path;
+            const fileList = document.getElementById('fileList');
+            fileList.dataset.loaded = 'true';
+            
+            fileList.innerHTML = '<div class="loading"><div class="spinner"></div><div>Загрузка...</div></div>';
+            
+            try {
+                const response = await fetch(`/api/files?path=${encodeURIComponent(path)}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Error loading files');
+                }
+                
+                renderBreadcrumb(path);
+                renderFiles(data.items, data.parent);
+            } catch (error) {
+                fileList.innerHTML = `<div class="empty-state"><div class="empty-state-icon">❌</div><div>${error.message}</div></div>`;
+            }
+        }
+        
+        function renderBreadcrumb(path) {
+            const breadcrumb = document.getElementById('breadcrumb');
+            const parts = path ? path.split('/').filter(Boolean) : [];
+            
+            let html = `<span class="breadcrumb-item ${!path ? 'current' : ''}" onclick="loadFiles('')">🏠 BRANDONLINE</span>`;
+            
+            let currentPathBuild = '';
+            parts.forEach((part, i) => {
+                currentPathBuild += (currentPathBuild ? '/' : '') + part;
+                const isLast = i === parts.length - 1;
+                html += `<span class="breadcrumb-sep">›</span>`;
+                html += `<span class="breadcrumb-item ${isLast ? 'current' : ''}" onclick="loadFiles('${currentPathBuild}')">${part}</span>`;
+            });
+            
+            breadcrumb.innerHTML = html;
+        }
+        
+        function renderFiles(items, parent) {
+            const fileList = document.getElementById('fileList');
+            
+            if (!items || items.length === 0) {
+                fileList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div>Папка пуста</div></div>';
+                return;
+            }
+            
+            const getIcon = (item) => {
+                if (item.type === 'folder') return { icon: '📁', class: 'folder' };
+                const ext = item.extension || '';
+                const icons = {
+                    '.md': { icon: '📝', class: 'file-md' },
+                    '.py': { icon: '🐍', class: 'file-py' },
+                    '.js': { icon: '⚡', class: 'file-js' },
+                    '.json': { icon: '📊', class: 'file-json' },
+                    '.html': { icon: '🌐', class: 'file-html' },
+                    '.css': { icon: '🎨', class: 'file' },
+                    '.txt': { icon: '📄', class: 'file' },
+                    '.env': { icon: '⚙️', class: 'file' },
+                    '.bat': { icon: '🖥️', class: 'file' },
+                    '.ps1': { icon: '💻', class: 'file' },
+                };
+                return icons[ext] || { icon: '📄', class: 'file' };
+            };
+            
+            const formatSize = (bytes) => {
+                if (!bytes) return '';
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            };
+            
+            const formatDate = (iso) => {
+                if (!iso) return '';
+                const d = new Date(iso);
+                return d.toLocaleDateString('ru-RU') + ' ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            };
+            
+            fileList.innerHTML = items.map(item => {
+                const { icon, class: iconClass } = getIcon(item);
+                const path = currentPath ? `${currentPath}/${item.name}` : item.name;
+                const meta = item.type === 'folder' 
+                    ? formatDate(item.modified)
+                    : `${formatSize(item.size)} • ${formatDate(item.modified)}`;
+                
+                return `
+                    <div class="file-item" onclick="${item.type === 'folder' ? `loadFiles('${path}')` : `openFile('${path}')`}">
+                        <div class="file-icon ${iconClass}">${icon}</div>
+                        <div class="file-info">
+                            <div class="file-name">${item.name}</div>
+                            <div class="file-meta">${meta}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function openFile(path) {
+            try {
+                const response = await fetch(`/api/file?path=${encodeURIComponent(path)}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Error opening file');
+                }
+                
+                if (data.type !== 'text') {
+                    alert(data.message || 'Cannot open binary file');
+                    return;
+                }
+                
+                currentFile = path;
+                fileModified = false;
+                
+                document.getElementById('fileBrowser').style.display = 'none';
+                document.getElementById('fileEditor').classList.add('active');
+                document.getElementById('editorTitle').textContent = data.name;
+                document.getElementById('editorContent').value = data.content;
+                document.getElementById('editorStatus').textContent = `${data.size} символов`;
+                
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+            }
+        }
+        
+        function closeEditor() {
+            if (fileModified && !confirm('Есть несохранённые изменения. Закрыть?')) {
+                return;
+            }
+            
+            document.getElementById('fileEditor').classList.remove('active');
+            document.getElementById('fileBrowser').style.display = 'block';
+            currentFile = null;
+            fileModified = false;
+        }
+        
+        async function saveFile() {
+            if (!currentFile) return;
+            
+            const content = document.getElementById('editorContent').value;
+            const status = document.getElementById('editorStatus');
+            
+            status.textContent = 'Сохранение...';
+            
+            try {
+                const response = await fetch('/api/file', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: currentFile, content })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Error saving file');
+                }
+                
+                fileModified = false;
+                status.textContent = `✅ Сохранено (${data.size} символов)`;
+                
+            } catch (error) {
+                status.textContent = '❌ Ошибка: ' + error.message;
+            }
+        }
+        
+        async function deleteCurrentFile() {
+            if (!currentFile) return;
+            
+            if (!confirm(`Удалить файл "${currentFile}"?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/file?path=${encodeURIComponent(currentFile)}&confirm=true`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.detail || 'Error deleting file');
+                }
+                
+                closeEditor();
+                loadFiles();
+                
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+            }
+        }
+        
+        // Track modifications
+        document.getElementById('editorContent').addEventListener('input', () => {
+            fileModified = true;
+            document.getElementById('editorStatus').textContent = '• Изменено';
+        });
+        
+        // Modal
+        let modalCallback = null;
+        
+        function showModal(title, placeholder, callback) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalInput').placeholder = placeholder;
+            document.getElementById('modalInput').value = '';
+            document.getElementById('modal').classList.add('active');
+            document.getElementById('modalInput').focus();
+            modalCallback = callback;
+        }
+        
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            modalCallback = null;
+        }
+        
+        document.getElementById('modalConfirm').addEventListener('click', () => {
+            const value = document.getElementById('modalInput').value.trim();
+            if (value && modalCallback) {
+                modalCallback(value);
+            }
+            closeModal();
+        });
+        
+        document.getElementById('modalInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('modalConfirm').click();
+            }
+        });
+        
+        // Create folder
+        function createFolder() {
+            showModal('Новая папка', 'Название папки', async (name) => {
+                const path = currentPath ? `${currentPath}/${name}` : name;
+                try {
+                    const response = await fetch('/api/folder', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ path })
+                    });
+                    
+                    if (!response.ok) {
+                        const data = await response.json();
+                        throw new Error(data.detail);
+                    }
+                    
+                    loadFiles();
+                } catch (error) {
+                    alert('Ошибка: ' + error.message);
+                }
+            });
+        }
+        
+        // Create file
+        function createFile() {
+            showModal('Новый файл', 'Название файла (с расширением)', async (name) => {
+                const path = currentPath ? `${currentPath}/${name}` : name;
+                try {
+                    const response = await fetch('/api/file', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ path, content: '' })
+                    });
+                    
+                    if (!response.ok) {
+                        const data = await response.json();
+                        throw new Error(data.detail);
+                    }
+                    
+                    openFile(path);
+                } catch (error) {
+                    alert('Ошибка: ' + error.message);
+                }
+            });
+        }
+        
+        // Init
+        loadDashboard();
     </script>
 </body>
 </html>

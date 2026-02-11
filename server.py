@@ -23,6 +23,9 @@ DATA_FILE = Path(__file__).parent / 'data.json'
 INDEX_FILE = Path(__file__).parent / 'index.html'
 CHAT_FILE = Path(__file__).parent / 'chat_history.json'
 
+# Файловый менеджер - базовая директория
+FILES_ROOT = Path(os.getenv('FILES_ROOT', 'C:/BRANDONLINE'))
+
 # Telegram API
 TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
@@ -268,6 +271,177 @@ async def post_status(request: Request):
         return {"status": "ok"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# ===== ФАЙЛОВЫЙ МЕНЕДЖЕР =====
+
+def safe_path(relative_path: str) -> Path:
+    """Безопасное разрешение пути (только внутри FILES_ROOT)"""
+    # Нормализуем путь
+    clean_path = relative_path.replace('\\', '/').strip('/')
+    full_path = (FILES_ROOT / clean_path).resolve()
+    
+    # Проверяем что путь внутри FILES_ROOT
+    try:
+        full_path.relative_to(FILES_ROOT.resolve())
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Access denied: path outside root")
+    
+    return full_path
+
+@app.get("/api/files")
+async def list_files(path: str = ""):
+    """Список файлов и папок"""
+    try:
+        target = safe_path(path)
+        
+        if not target.exists():
+            raise HTTPException(status_code=404, detail="Path not found")
+        
+        if not target.is_dir():
+            raise HTTPException(status_code=400, detail="Not a directory")
+        
+        items = []
+        for item in sorted(target.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower())):
+            try:
+                stat = item.stat()
+                items.append({
+                    "name": item.name,
+                    "type": "folder" if item.is_dir() else "file",
+                    "size": stat.st_size if item.is_file() else None,
+                    "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    "extension": item.suffix.lower() if item.is_file() else None
+                })
+            except (PermissionError, OSError):
+                continue
+        
+        return {
+            "path": path,
+            "parent": str(Path(path).parent) if path else None,
+            "items": items
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/file")
+async def read_file(path: str):
+    """Прочитать содержимое файла"""
+    try:
+        target = safe_path(path)
+        
+        if not target.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        if not target.is_file():
+            raise HTTPException(status_code=400, detail="Not a file")
+        
+        # Проверяем размер (макс 1MB для текстовых)
+        if target.stat().st_size > 1_000_000:
+            raise HTTPException(status_code=413, detail="File too large (max 1MB)")
+        
+        # Определяем тип файла
+        text_extensions = {'.txt', '.md', '.json', '.py', '.js', '.html', '.css', '.yaml', '.yml', '.xml', '.csv', '.log', '.bat', '.sh', '.ps1', '.env', '.gitignore', '.toml', '.ini', '.cfg'}
+        
+        if target.suffix.lower() in text_extensions or target.suffix == '':
+            try:
+                content = target.read_text(encoding='utf-8')
+                return {
+                    "path": path,
+                    "name": target.name,
+                    "content": content,
+                    "type": "text",
+                    "size": len(content)
+                }
+            except UnicodeDecodeError:
+                return {
+                    "path": path,
+                    "name": target.name,
+                    "content": None,
+                    "type": "binary",
+                    "message": "Binary file, cannot display"
+                }
+        else:
+            return {
+                "path": path,
+                "name": target.name,
+                "content": None,
+                "type": "binary",
+                "message": f"Binary file ({target.suffix})"
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/file")
+async def save_file(request: Request):
+    """Сохранить файл"""
+    try:
+        data = await request.json()
+        path = data.get("path", "")
+        content = data.get("content", "")
+        
+        target = safe_path(path)
+        
+        # Создаём родительские директории если нужно
+        target.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Сохраняем
+        target.write_text(content, encoding='utf-8')
+        
+        return {"status": "ok", "path": path, "size": len(content)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/folder")
+async def create_folder(request: Request):
+    """Создать папку"""
+    try:
+        data = await request.json()
+        path = data.get("path", "")
+        
+        target = safe_path(path)
+        target.mkdir(parents=True, exist_ok=True)
+        
+        return {"status": "ok", "path": path}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/file")
+async def delete_file(path: str, confirm: bool = False):
+    """Удалить файл или папку"""
+    if not confirm:
+        raise HTTPException(status_code=400, detail="Confirmation required (confirm=true)")
+    
+    try:
+        target = safe_path(path)
+        
+        if not target.exists():
+            raise HTTPException(status_code=404, detail="Path not found")
+        
+        if target.is_file():
+            target.unlink()
+        else:
+            # Удаляем только пустые папки для безопасности
+            if any(target.iterdir()):
+                raise HTTPException(status_code=400, detail="Folder not empty")
+            target.rmdir()
+        
+        return {"status": "ok", "deleted": path}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/files", response_class=HTMLResponse)
+async def files_page():
+    """Страница файлового менеджера"""
+    return await root()
 
 # ===== ЗАПУСК =====
 
