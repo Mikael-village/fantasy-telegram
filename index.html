@@ -3,19 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Clawdbot Chat</title>
+    <title>Fantasy Dashboard</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
             --bg-primary: #1a1a2e;
             --bg-secondary: #16213e;
-            --bg-message-user: #4a47a3;
-            --bg-message-bot: #2d2d44;
+            --bg-card: #1f2937;
             --text-primary: #ffffff;
-            --text-secondary: #a0a0a0;
+            --text-secondary: #9ca3af;
             --accent: #7c3aed;
             --accent-light: #a78bfa;
-            --border: #333355;
+            --gold: #fbbf24;
+            --green: #22c55e;
+            --blue: #3b82f6;
+            --red: #ef4444;
+            --border: #374151;
         }
         
         * {
@@ -28,341 +31,350 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
+            min-height: 100vh;
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+        
+        /* Character Header */
+        .character-header {
+            background: linear-gradient(135deg, var(--accent), var(--bg-secondary));
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            position: relative;
             overflow: hidden;
         }
         
-        /* Header */
-        .header {
-            background: var(--bg-secondary);
-            padding: 12px 16px;
+        .character-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+        
+        .character-top {
             display: flex;
             align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent), var(--accent-light));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-        
-        .header-info {
-            flex: 1;
-        }
-        
-        .header-title {
-            font-weight: 600;
-            font-size: 16px;
-        }
-        
-        .header-status {
-            font-size: 12px;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #22c55e;
-        }
-        
-        .status-dot.typing {
-            background: var(--accent);
-            animation: pulse 1s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        /* Chat area */
-        .chat-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        
-        .message {
-            max-width: 85%;
-            padding: 10px 14px;
-            border-radius: 16px;
-            line-height: 1.4;
-            font-size: 14px;
-            word-wrap: break-word;
-        }
-        
-        .message.user {
-            align-self: flex-end;
-            background: var(--bg-message-user);
-            border-bottom-right-radius: 4px;
-        }
-        
-        .message.assistant {
-            align-self: flex-start;
-            background: var(--bg-message-bot);
-            border-bottom-left-radius: 4px;
-        }
-        
-        .message-time {
-            font-size: 10px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-            text-align: right;
-        }
-        
-        .message.assistant .message-time {
-            text-align: left;
-        }
-        
-        .message-content {
-            white-space: pre-wrap;
-        }
-        
-        .message-content code {
-            background: rgba(0,0,0,0.3);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 13px;
-        }
-        
-        .message-content pre {
-            background: rgba(0,0,0,0.3);
-            padding: 10px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 8px 0;
-        }
-        
-        .message-content pre code {
-            background: none;
-            padding: 0;
-        }
-        
-        /* Typing indicator */
-        .typing-indicator {
-            display: none;
-            align-self: flex-start;
-            padding: 12px 16px;
-            background: var(--bg-message-bot);
-            border-radius: 16px;
-            border-bottom-left-radius: 4px;
-        }
-        
-        .typing-indicator.active {
-            display: flex;
-            gap: 4px;
-        }
-        
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--text-secondary);
-            border-radius: 50%;
-            animation: typing 1.4s infinite;
-        }
-        
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-        
-        @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-4px); }
-        }
-        
-        /* Quick actions */
-        .quick-actions {
-            padding: 8px 16px;
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            background: var(--bg-secondary);
-            border-top: 1px solid var(--border);
-        }
-        
-        .quick-btn {
-            padding: 6px 12px;
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            color: var(--text-primary);
-            font-size: 12px;
-            white-space: nowrap;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .quick-btn:hover {
-            background: var(--accent);
-            border-color: var(--accent);
-        }
-        
-        /* Input area */
-        .input-container {
-            padding: 12px 16px;
-            background: var(--bg-secondary);
-            display: flex;
-            gap: 12px;
-            align-items: flex-end;
-        }
-        
-        .input-wrapper {
-            flex: 1;
-            background: var(--bg-primary);
-            border-radius: 20px;
-            padding: 8px 16px;
-            display: flex;
-            align-items: center;
-        }
-        
-        #messageInput {
-            flex: 1;
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            font-size: 14px;
-            outline: none;
-            resize: none;
-            max-height: 120px;
-            line-height: 1.4;
-        }
-        
-        #messageInput::placeholder {
-            color: var(--text-secondary);
-        }
-        
-        .send-btn {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: var(--accent);
-            border: none;
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-        
-        .send-btn:hover {
-            background: var(--accent-light);
-            transform: scale(1.05);
-        }
-        
-        .send-btn:disabled {
-            background: var(--border);
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        /* Connection status */
-        .connection-banner {
-            display: none;
-            padding: 8px 16px;
-            background: #dc2626;
-            color: white;
-            text-align: center;
-            font-size: 12px;
-        }
-        
-        .connection-banner.disconnected {
-            display: block;
-        }
-        
-        /* Welcome message */
-        .welcome {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-secondary);
-        }
-        
-        .welcome-icon {
-            font-size: 48px;
+            gap: 16px;
             margin-bottom: 16px;
         }
         
-        .welcome h2 {
-            color: var(--text-primary);
+        .avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--gold), #f59e0b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+        }
+        
+        .character-info h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .character-title {
+            color: var(--gold);
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .character-class {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+        
+        /* Level & XP */
+        .level-section {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 12px;
+        }
+        
+        .level-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 8px;
+        }
+        
+        .level-badge {
+            background: var(--gold);
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        
+        .xp-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .xp-bar {
+            height: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .xp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold), #f59e0b);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        /* Stats Card */
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .card-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .stat-item {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 12px;
+        }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .stat-name {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent-light);
+        }
+        
+        .stat-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .stat-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+        
+        /* Quests */
+        .quest-item {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .quest-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), var(--blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .quest-info {
+            flex: 1;
+        }
+        
+        .quest-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .quest-progress {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .quest-reward {
+            background: rgba(251, 191, 36, 0.2);
+            color: var(--gold);
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .quest-item.completed {
+            opacity: 0.6;
+        }
+        
+        .quest-item.completed .quest-icon {
+            background: var(--green);
+        }
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        
+        /* Refresh button */
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+            transition: all 0.2s;
+        }
+        
+        .refresh-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .refresh-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .refresh-btn.loading {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Last update */
+        .last-update {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 16px;
+        }
+        
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-secondary) 50%, var(--bg-card) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
     </style>
 </head>
 <body>
-    <!-- Connection banner -->
-    <div class="connection-banner" id="connectionBanner">
-        ⚠️ Соединение потеряно. Переподключение...
-    </div>
-    
-    <!-- Header -->
-    <div class="header">
-        <div class="avatar">🤖</div>
-        <div class="header-info">
-            <div class="header-title">Помощник Микаела</div>
-            <div class="header-status">
-                <span class="status-dot" id="statusDot"></span>
-                <span id="statusText">онлайн</span>
+    <!-- Character Header -->
+    <div class="character-header">
+        <div class="character-top">
+            <div class="avatar" id="avatar">🧙</div>
+            <div class="character-info">
+                <h1 id="charName">Помощник Микаела</h1>
+                <div class="character-title" id="charTitle">Хранитель Контекста</div>
+                <div class="character-class" id="charClass">Архимаг Автоматизации</div>
+            </div>
+        </div>
+        <div class="level-section">
+            <div class="level-row">
+                <span class="level-badge" id="levelBadge">Ур. 1</span>
+                <span class="xp-text"><span id="xpCurrent">0</span>/<span id="xpTotal">100</span> XP</span>
+            </div>
+            <div class="xp-bar">
+                <div class="xp-fill" id="xpFill" style="width: 0%"></div>
             </div>
         </div>
     </div>
     
-    <!-- Chat -->
-    <div class="chat-container" id="chatContainer">
-        <div class="welcome" id="welcome">
-            <div class="welcome-icon">💬</div>
-            <h2>Добро пожаловать!</h2>
-            <p>Напишите сообщение чтобы начать диалог</p>
+    <!-- Stats -->
+    <div class="card">
+        <div class="card-title">⚔️ Характеристики</div>
+        <div class="stats-grid" id="statsGrid">
+            <!-- Stats will be loaded here -->
         </div>
     </div>
     
-    <!-- Typing indicator -->
-    <div class="typing-indicator" id="typingIndicator">
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-    </div>
-    
-    <!-- Quick actions -->
-    <div class="quick-actions">
-        <button class="quick-btn" onclick="sendQuick('Привет!')">👋 Привет</button>
-        <button class="quick-btn" onclick="sendQuick('Статус')">📊 Статус</button>
-        <button class="quick-btn" onclick="sendQuick('Помощь')">❓ Помощь</button>
-        <button class="quick-btn" onclick="sendQuick('Задачи на сегодня')">📋 Задачи</button>
-    </div>
-    
-    <!-- Input -->
-    <div class="input-container">
-        <div class="input-wrapper">
-            <textarea 
-                id="messageInput" 
-                placeholder="Сообщение..." 
-                rows="1"
-                onkeydown="handleKeyDown(event)"
-                oninput="autoResize(this)"
-            ></textarea>
+    <!-- Active Quests -->
+    <div class="card">
+        <div class="card-title">📜 Активные квесты</div>
+        <div id="questsList">
+            <div class="empty-state">
+                <div class="empty-state-icon">🎯</div>
+                <div>Нет активных квестов</div>
+            </div>
         </div>
-        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-            ➤
-        </button>
     </div>
+    
+    <!-- Achievements -->
+    <div class="card">
+        <div class="card-title">🏆 Достижения</div>
+        <div id="achievementsList">
+            <div class="empty-state">
+                <div class="empty-state-icon">⭐</div>
+                <div>Достижения появятся здесь</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="last-update" id="lastUpdate">Загрузка...</div>
+    
+    <!-- Refresh button -->
+    <button class="refresh-btn" id="refreshBtn" onclick="loadData()">🔄</button>
 
     <script>
         // Telegram WebApp
@@ -371,178 +383,127 @@
             tg.ready();
             tg.expand();
             
-            // Применяем цвета темы Telegram
-            document.documentElement.style.setProperty('--bg-primary', tg.themeParams.bg_color || '#1a1a2e');
-            document.documentElement.style.setProperty('--bg-secondary', tg.themeParams.secondary_bg_color || '#16213e');
-            document.documentElement.style.setProperty('--text-primary', tg.themeParams.text_color || '#ffffff');
-        }
-        
-        // WebSocket
-        let ws = null;
-        let reconnectAttempts = 0;
-        const maxReconnectAttempts = 5;
-        
-        function getWsUrl() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            return `${protocol}//${window.location.host}/ws/chat`;
-        }
-        
-        function connect() {
-            ws = new WebSocket(getWsUrl());
-            
-            ws.onopen = () => {
-                console.log('WebSocket connected');
-                reconnectAttempts = 0;
-                document.getElementById('connectionBanner').classList.remove('disconnected');
-                setStatus('online', 'онлайн');
-            };
-            
-            ws.onclose = () => {
-                console.log('WebSocket disconnected');
-                document.getElementById('connectionBanner').classList.add('disconnected');
-                setStatus('offline', 'оффлайн');
-                
-                // Reconnect
-                if (reconnectAttempts < maxReconnectAttempts) {
-                    reconnectAttempts++;
-                    setTimeout(connect, 2000 * reconnectAttempts);
-                }
-            };
-            
-            ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-            };
-            
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                handleMessage(data);
-            };
-        }
-        
-        function handleMessage(data) {
-            if (data.type === 'history') {
-                // Загружаем историю
-                data.messages.forEach(msg => addMessageToChat(msg));
-                hideWelcome();
-            } else if (data.type === 'status') {
-                if (data.status === 'typing') {
-                    showTyping();
-                } else {
-                    hideTyping();
-                    setStatus('online', 'онлайн');
-                }
-            } else if (data.role) {
-                // Обычное сообщение
-                hideTyping();
-                addMessageToChat(data);
-                hideWelcome();
+            // Apply Telegram theme
+            if (tg.themeParams.bg_color) {
+                document.documentElement.style.setProperty('--bg-primary', tg.themeParams.bg_color);
+            }
+            if (tg.themeParams.secondary_bg_color) {
+                document.documentElement.style.setProperty('--bg-secondary', tg.themeParams.secondary_bg_color);
+                document.documentElement.style.setProperty('--bg-card', tg.themeParams.secondary_bg_color);
             }
         }
         
-        function addMessageToChat(msg) {
-            const container = document.getElementById('chatContainer');
-            const div = document.createElement('div');
-            div.className = `message ${msg.role}`;
+        // Load data from API
+        async function loadData() {
+            const btn = document.getElementById('refreshBtn');
+            btn.classList.add('loading');
             
-            const time = new Date(msg.timestamp).toLocaleTimeString('ru-RU', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            
-            div.innerHTML = `
-                <div class="message-content">${formatMessage(msg.content)}</div>
-                <div class="message-time">${time}</div>
-            `;
-            
-            container.appendChild(div);
-            scrollToBottom();
-        }
-        
-        function formatMessage(text) {
-            // Простой markdown
-            return text
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-                .replace(/`([^`]+)`/g, '<code>$1</code>')
-                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-                .replace(/\n/g, '<br>');
-        }
-        
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const text = input.value.trim();
-            
-            if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
-            
-            ws.send(JSON.stringify({
-                type: 'message',
-                content: text
-            }));
-            
-            input.value = '';
-            autoResize(input);
-        }
-        
-        function sendQuick(text) {
-            const input = document.getElementById('messageInput');
-            input.value = text;
-            sendMessage();
-        }
-        
-        function handleKeyDown(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
+            try {
+                const response = await fetch('/api/data');
+                const data = await response.json();
+                renderData(data);
+                document.getElementById('lastUpdate').textContent = 
+                    'Обновлено: ' + new Date().toLocaleTimeString('ru-RU');
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('lastUpdate').textContent = 'Ошибка загрузки';
+            } finally {
+                btn.classList.remove('loading');
             }
         }
         
-        function autoResize(el) {
-            el.style.height = 'auto';
-            el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-        }
-        
-        function scrollToBottom() {
-            const container = document.getElementById('chatContainer');
-            container.scrollTop = container.scrollHeight;
-        }
-        
-        function showTyping() {
-            document.getElementById('typingIndicator').classList.add('active');
-            document.getElementById('statusDot').classList.add('typing');
-            document.getElementById('statusText').textContent = 'печатает...';
-            scrollToBottom();
-        }
-        
-        function hideTyping() {
-            document.getElementById('typingIndicator').classList.remove('active');
-            document.getElementById('statusDot').classList.remove('typing');
-        }
-        
-        function setStatus(status, text) {
-            const dot = document.getElementById('statusDot');
-            const statusText = document.getElementById('statusText');
+        function renderData(data) {
+            const char = data.character || {};
             
-            dot.className = 'status-dot';
-            if (status === 'typing') dot.classList.add('typing');
-            statusText.textContent = text;
-        }
-        
-        function hideWelcome() {
-            const welcome = document.getElementById('welcome');
-            if (welcome) welcome.style.display = 'none';
-        }
-        
-        // Ping для поддержания соединения
-        setInterval(() => {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ type: 'ping' }));
+            // Character info
+            document.getElementById('charName').textContent = char.name || 'Помощник Микаела';
+            document.getElementById('charTitle').textContent = char.title || 'Хранитель Контекста';
+            document.getElementById('charClass').textContent = char.class || 'Архимаг Автоматизации';
+            
+            // Level & XP
+            const level = char.level || 1;
+            const xp = char.xp || { current: 0, total: 100 };
+            document.getElementById('levelBadge').textContent = `Ур. ${level}`;
+            document.getElementById('xpCurrent').textContent = xp.current;
+            document.getElementById('xpTotal').textContent = xp.total;
+            document.getElementById('xpFill').style.width = `${(xp.current / xp.total) * 100}%`;
+            
+            // Stats
+            const statsGrid = document.getElementById('statsGrid');
+            const stats = char.stats || {};
+            statsGrid.innerHTML = '';
+            
+            const statIcons = { STR: '💪', INT: '🧠', WIS: '📚', DEX: '⚡', CHR: '💬' };
+            
+            for (const [key, stat] of Object.entries(stats)) {
+                const div = document.createElement('div');
+                div.className = 'stat-item';
+                div.innerHTML = `
+                    <div class="stat-header">
+                        <span class="stat-name">${statIcons[key] || '📊'} ${stat.label || key}</span>
+                        <span class="stat-value">${stat.value || 0}</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-fill" style="width: ${stat.value || 0}%"></div>
+                    </div>
+                `;
+                statsGrid.appendChild(div);
             }
-        }, 30000);
+            
+            // Quests
+            const questsList = document.getElementById('questsList');
+            const quests = char.quests || [];
+            
+            if (quests.length > 0) {
+                questsList.innerHTML = '';
+                quests.forEach(quest => {
+                    const div = document.createElement('div');
+                    div.className = `quest-item ${quest.completed ? 'completed' : ''}`;
+                    div.innerHTML = `
+                        <div class="quest-icon">${quest.completed ? '✅' : '📋'}</div>
+                        <div class="quest-info">
+                            <div class="quest-name">${quest.name || 'Квест'}</div>
+                            <div class="quest-progress">${quest.description || ''}</div>
+                        </div>
+                        ${quest.reward ? `<div class="quest-reward">+${quest.reward} XP</div>` : ''}
+                    `;
+                    questsList.appendChild(div);
+                });
+            } else {
+                questsList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎯</div>
+                        <div>Нет активных квестов</div>
+                    </div>
+                `;
+            }
+            
+            // Achievements
+            const achievementsList = document.getElementById('achievementsList');
+            const achievements = char.achievements || [];
+            
+            if (achievements.length > 0) {
+                achievementsList.innerHTML = '';
+                achievements.forEach(ach => {
+                    const div = document.createElement('div');
+                    div.className = 'quest-item';
+                    div.innerHTML = `
+                        <div class="quest-icon" style="background: linear-gradient(135deg, #fbbf24, #f59e0b);">🏆</div>
+                        <div class="quest-info">
+                            <div class="quest-name">${ach.name || 'Достижение'}</div>
+                            <div class="quest-progress">${ach.description || ''}</div>
+                        </div>
+                    `;
+                    achievementsList.appendChild(div);
+                });
+            }
+        }
         
-        // Start
-        connect();
+        // Load on start
+        loadData();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadData, 30000);
     </script>
 </body>
 </html>
