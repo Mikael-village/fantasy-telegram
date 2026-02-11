@@ -1,37 +1,111 @@
 """
 Fantasy Dashboard Web Server
-FastAPI бэкенд для Mini App
+FastAPI бэкенд для Mini App с WebSocket чатом
 """
 
 import os
 import json
+import asyncio
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, Header, Request
+from typing import List, Dict
+from datetime import datetime
+from fastapi import FastAPI, HTTPException, Header, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 # Конфигурация
-API_SECRET = os.getenv('API_SECRET', 'your-secret-token')
+API_SECRET = os.getenv('API_SECRET', 'fantasy-secret-2026')
+BOT_TOKEN = os.getenv('BOT_TOKEN', '')
 DATA_FILE = Path(__file__).parent / 'data.json'
 INDEX_FILE = Path(__file__).parent / 'index.html'
+CHAT_FILE = Path(__file__).parent / 'chat_history.json'
 
 # Создаём приложение
 app = FastAPI(
     title="Fantasy Dashboard API",
-    description="API для Telegram Mini App RPG-дашборда",
-    version="1.0.0"
+    description="API для Telegram Mini App с Clawdbot чатом",
+    version="2.0.0"
 )
 
 # CORS для Telegram
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Telegram Web Apps
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ===== WEBSOCKET MANAGER =====
+
+class ConnectionManager:
+    """Менеджер WebSocket соединений"""
+    
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+        self.chat_history: List[Dict] = []
+        self._load_history()
+    
+    def _load_history(self):
+        """Загрузить историю чата"""
+        try:
+            if CHAT_FILE.exists():
+                with open(CHAT_FILE, 'r', encoding='utf-8') as f:
+                    self.chat_history = json.load(f)
+        except:
+            self.chat_history = []
+    
+    def _save_history(self):
+        """Сохранить историю чата"""
+        try:
+            # Храним последние 100 сообщений
+            with open(CHAT_FILE, 'w', encoding='utf-8') as f:
+                json.dump(self.chat_history[-100:], f, ensure_ascii=False, indent=2)
+        except:
+            pass
+    
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+        # Отправляем историю при подключении
+        if self.chat_history:
+            await websocket.send_json({
+                "type": "history",
+                "messages": self.chat_history[-50:]  # Последние 50 сообщений
+            })
+    
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+    
+    async def broadcast(self, message: dict):
+        """Отправить сообщение всем подключенным клиентам"""
+        self.chat_history.append(message)
+        self._save_history()
+        
+        disconnected = []
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except:
+                disconnected.append(connection)
+        
+        for conn in disconnected:
+            self.disconnect(conn)
+    
+    def add_message(self, role: str, content: str, metadata: dict = None):
+        """Добавить сообщение в историю"""
+        msg = {
+            "id": len(self.chat_history) + 1,
+            "role": role,  # "user" или "assistant"
+            "content": content,
+            "timestamp": datetime.now().isoformat(),
+            "metadata": metadata or {}
+        }
+        return msg
+
+manager = ConnectionManager()
 
 # ===== УТИЛИТЫ =====
 
@@ -57,9 +131,9 @@ async def root():
         return FileResponse(INDEX_FILE, media_type='text/html')
     return HTMLResponse("<h1>Fantasy Dashboard</h1><p>index.html not found</p>")
 
-@app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard():
-    """Alias для Mini App"""
+@app.get("/chat", response_class=HTMLResponse)
+async def chat_page():
+    """Страница чата"""
     return await root()
 
 @app.get("/api/data")
@@ -70,8 +144,7 @@ async def get_data():
 
 @app.post("/api/data")
 async def update_data(request: Request, authorization: str = Header(None)):
-    """Обновить данные персонажа (требует авторизации)"""
-    # Проверка токена
+    """Обновить данные персонажа"""
     if authorization != f"Bearer {API_SECRET}":
         raise HTTPException(status_code=401, detail="Unauthorized")
     
@@ -85,23 +158,94 @@ async def update_data(request: Request, authorization: str = Header(None)):
 @app.get("/api/health")
 async def health():
     """Health check"""
-    return {"status": "ok", "service": "Fantasy Dashboard"}
+    return {
+        "status": "ok", 
+        "service": "Fantasy Dashboard",
+        "version": "2.0.0",
+        "connections": len(manager.active_connections)
+    }
+
+@app.get("/api/chat/history")
+async def get_chat_history(limit: int = 50):
+    """Получить историю чата"""
+    return {"messages": manager.chat_history[-limit:]}
+
+# ===== WEBSOCKET =====
+
+@app.websocket("/ws/chat")
+async def websocket_chat(websocket: WebSocket):
+    """WebSocket для real-time чата"""
+    await manager.connect(websocket)
+    
+    try:
+        while True:
+            # Получаем сообщение от клиента
+            data = await websocket.receive_json()
+            
+            if data.get("type") == "message":
+                # Сообщение от пользователя
+                user_msg = manager.add_message(
+                    role="user",
+                    content=data.get("content", ""),
+                    metadata={"source": "miniapp"}
+                )
+                await manager.broadcast(user_msg)
+                
+                # Отправляем статус "typing"
+                await manager.broadcast({
+                    "type": "status",
+                    "status": "typing"
+                })
+            
+            elif data.get("type") == "ping":
+                await websocket.send_json({"type": "pong"})
+    
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+
+@app.post("/api/chat/message")
+async def post_message(request: Request):
+    """HTTP endpoint для отправки сообщений (от бота)"""
+    try:
+        data = await request.json()
+        role = data.get("role", "assistant")
+        content = data.get("content", "")
+        metadata = data.get("metadata", {})
+        
+        msg = manager.add_message(role, content, metadata)
+        await manager.broadcast(msg)
+        
+        return {"status": "ok", "message_id": msg["id"]}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/chat/status")
+async def post_status(request: Request):
+    """Обновить статус (typing, online, etc)"""
+    try:
+        data = await request.json()
+        await manager.broadcast({
+            "type": "status",
+            "status": data.get("status", "online")
+        })
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 # ===== ЗАПУСК =====
 
 if __name__ == '__main__':
-    # Для локальной разработки
-    # Для HTTPS в продакшене используй reverse proxy (nginx) или Railway/Render
     print("""
     ========================================
-       Fantasy Dashboard Server
+       Fantasy Dashboard + Chat Server
     ========================================
     Endpoints:
-      GET  /           - Mini App
-      GET  /dashboard  - Mini App (alias)
-      GET  /api/data   - Get data
-      POST /api/data   - Update data
-      GET  /api/health - Health check
+      GET  /              - Mini App
+      GET  /chat          - Chat page
+      WS   /ws/chat       - WebSocket chat
+      GET  /api/health    - Health check
+      GET  /api/chat/history - Chat history
+      POST /api/chat/message - Send message
     ========================================
     """)
     
