@@ -22,6 +22,7 @@ OWNER_CHAT_ID = os.getenv('OWNER_CHAT_ID', '')
 DATA_FILE = Path(__file__).parent / 'data.json'
 INDEX_FILE = Path(__file__).parent / 'index.html'
 CHAT_FILE = Path(__file__).parent / 'chat_history.json'
+SOUL_FILE = Path(__file__).parent / 'soul.json'
 
 # Файловый менеджер - базовая директория
 FILES_ROOT = Path(os.getenv('FILES_ROOT', 'C:/BRANDONLINE'))
@@ -199,6 +200,64 @@ async def health():
         "version": "2.0.0",
         "connections": len(manager.active_connections)
     }
+
+@app.get("/api/soul")
+async def get_soul():
+    """Получить данные вкладки Душа (папка клиентов)"""
+    try:
+        if SOUL_FILE.exists():
+            with open(SOUL_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        else:
+            return {
+                "error": "Soul data not synced yet",
+                "items": []
+            }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "items": []
+        }
+
+# AI Status tracking
+AI_STATUS_FILE = Path(__file__).parent / 'ai_status.json'
+
+@app.get("/api/ai/status")
+async def get_ai_status():
+    """Проверить статус AI (Помощник Микаела)"""
+    try:
+        if AI_STATUS_FILE.exists():
+            with open(AI_STATUS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                
+            # Проверяем время последнего пинга
+            last_ping = datetime.fromisoformat(data.get('last_ping', '2000-01-01'))
+            diff_seconds = (datetime.now() - last_ping).total_seconds()
+            
+            # Онлайн если пинг был меньше 2 минут назад
+            return {
+                "online": diff_seconds < 120,
+                "last_ping": data.get('last_ping'),
+                "diff_seconds": int(diff_seconds)
+            }
+        else:
+            return {"online": False, "last_ping": None}
+    except Exception as e:
+        return {"online": False, "error": str(e)}
+
+@app.post("/api/ai/ping")
+async def ai_ping():
+    """AI отправляет пинг чтобы показать что онлайн"""
+    try:
+        data = {
+            "last_ping": datetime.now().isoformat(),
+            "status": "online"
+        }
+        with open(AI_STATUS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f)
+        return {"status": "ok", "ping": data["last_ping"]}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
 
 @app.get("/api/chat/history")
 async def get_chat_history(limit: int = 50):
@@ -433,6 +492,28 @@ async def delete_file(path: str, confirm: bool = False):
             target.rmdir()
         
         return {"status": "ok", "deleted": path}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/files/open")
+async def open_file(path: str):
+    """Открыть/скачать файл"""
+    try:
+        target = safe_path(path)
+        
+        if not target.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        if not target.is_file():
+            raise HTTPException(status_code=400, detail="Not a file")
+        
+        return FileResponse(
+            path=target,
+            filename=target.name,
+            media_type='application/octet-stream'
+        )
     except HTTPException:
         raise
     except Exception as e:
