@@ -163,6 +163,32 @@ async def root():
         return FileResponse(INDEX_FILE, media_type='text/html')
     return HTMLResponse("<h1>Fantasy Dashboard</h1><p>index.html not found</p>")
 
+# ===== PWA STATIC FILES =====
+
+@app.get("/manifest.json")
+async def manifest():
+    """PWA Manifest"""
+    manifest_file = Path(__file__).parent / 'manifest.json'
+    if manifest_file.exists():
+        return FileResponse(manifest_file, media_type='application/manifest+json')
+    raise HTTPException(status_code=404, detail="Manifest not found")
+
+@app.get("/sw.js")
+async def service_worker():
+    """Service Worker"""
+    sw_file = Path(__file__).parent / 'sw.js'
+    if sw_file.exists():
+        return FileResponse(sw_file, media_type='application/javascript')
+    raise HTTPException(status_code=404, detail="Service worker not found")
+
+@app.get("/icon-{size}.png")
+async def pwa_icon(size: int):
+    """PWA Icons"""
+    icon_file = Path(__file__).parent / f'icon-{size}.png'
+    if icon_file.exists():
+        return FileResponse(icon_file, media_type='image/png')
+    raise HTTPException(status_code=404, detail="Icon not found")
+
 @app.get("/chat", response_class=HTMLResponse)
 async def chat_page():
     """Страница чата"""
