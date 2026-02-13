@@ -17,13 +17,11 @@ import httpx
 
 # Конфигурация
 API_SECRET = os.getenv('API_SECRET', 'fantasy-secret-2026')
-BRIDGE_SECRET = os.getenv('BRIDGE_SECRET', 'fantasy-bridge-2026')
 BOT_TOKEN = os.getenv('BOT_TOKEN', '')
 OWNER_CHAT_ID = os.getenv('OWNER_CHAT_ID', '')
 DATA_FILE = Path(__file__).parent / 'data.json'
 INDEX_FILE = Path(__file__).parent / 'index.html'
 CHAT_FILE = Path(__file__).parent / 'chat_history.json'
-SOUL_FILE = Path(__file__).parent / 'soul.json'
 
 # Файловый менеджер - базовая директория
 FILES_ROOT = Path(os.getenv('FILES_ROOT', 'C:/BRANDONLINE'))
@@ -202,64 +200,6 @@ async def health():
         "connections": len(manager.active_connections)
     }
 
-@app.get("/api/soul")
-async def get_soul():
-    """Получить данные вкладки Душа (папка клиентов)"""
-    try:
-        if SOUL_FILE.exists():
-            with open(SOUL_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        else:
-            return {
-                "error": "Soul data not synced yet",
-                "items": []
-            }
-    except Exception as e:
-        return {
-            "error": str(e),
-            "items": []
-        }
-
-# AI Status tracking
-AI_STATUS_FILE = Path(__file__).parent / 'ai_status.json'
-
-@app.get("/api/ai/status")
-async def get_ai_status():
-    """Проверить статус AI (Помощник Микаела)"""
-    try:
-        if AI_STATUS_FILE.exists():
-            with open(AI_STATUS_FILE, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                
-            # Проверяем время последнего пинга
-            last_ping = datetime.fromisoformat(data.get('last_ping', '2000-01-01'))
-            diff_seconds = (datetime.now() - last_ping).total_seconds()
-            
-            # Онлайн если пинг был меньше 2 минут назад
-            return {
-                "online": diff_seconds < 120,
-                "last_ping": data.get('last_ping'),
-                "diff_seconds": int(diff_seconds)
-            }
-        else:
-            return {"online": False, "last_ping": None}
-    except Exception as e:
-        return {"online": False, "error": str(e)}
-
-@app.post("/api/ai/ping")
-async def ai_ping():
-    """AI отправляет пинг чтобы показать что онлайн"""
-    try:
-        data = {
-            "last_ping": datetime.now().isoformat(),
-            "status": "online"
-        }
-        with open(AI_STATUS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(data, f)
-        return {"status": "ok", "ping": data["last_ping"]}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
-
 @app.get("/api/chat/history")
 async def get_chat_history(limit: int = 50):
     """Получить историю чата"""
@@ -332,136 +272,7 @@ async def post_status(request: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# ===== PC BRIDGE =====
-
-class PCBridge:
-    """Менеджер соединения с PC"""
-    
-    def __init__(self):
-        self.pc_websocket: WebSocket = None
-        self.pending_requests: Dict[str, asyncio.Future] = {}
-        self.request_counter = 0
-    
-    @property
-    def is_connected(self):
-        return self.pc_websocket is not None
-    
-    async def connect(self, websocket: WebSocket):
-        self.pc_websocket = websocket
-        print(f"[PC Bridge] PC connected")
-    
-    def disconnect(self):
-        self.pc_websocket = None
-        # Cancel pending requests
-        for future in self.pending_requests.values():
-            if not future.done():
-                future.set_exception(Exception("PC disconnected"))
-        self.pending_requests.clear()
-        print(f"[PC Bridge] PC disconnected")
-    
-    async def request(self, action: str, path: str = "", timeout: float = 30.0) -> dict:
-        """Отправить запрос к PC и ждать ответа"""
-        if not self.is_connected:
-            return {"error": "PC not connected", "pc_online": False}
-        
-        self.request_counter += 1
-        request_id = f"req_{self.request_counter}"
-        
-        future = asyncio.get_event_loop().create_future()
-        self.pending_requests[request_id] = future
-        
-        try:
-            await self.pc_websocket.send_json({
-                "type": "request",
-                "id": request_id,
-                "action": action,
-                "path": path
-            })
-            
-            result = await asyncio.wait_for(future, timeout=timeout)
-            return result
-        except asyncio.TimeoutError:
-            return {"error": "Request timeout"}
-        except Exception as e:
-            return {"error": str(e)}
-        finally:
-            self.pending_requests.pop(request_id, None)
-    
-    def handle_response(self, data: dict):
-        """Обработать ответ от PC"""
-        request_id = data.get("id")
-        if request_id and request_id in self.pending_requests:
-            future = self.pending_requests[request_id]
-            if not future.done():
-                future.set_result(data)
-
-pc_bridge = PCBridge()
-
-@app.websocket("/ws/pc-bridge")
-async def websocket_pc_bridge(websocket: WebSocket):
-    """WebSocket для подключения PC"""
-    await websocket.accept()
-    
-    try:
-        # Ждём авторизацию
-        auth_data = await asyncio.wait_for(websocket.receive_json(), timeout=10)
-        
-        if auth_data.get("type") != "auth" or auth_data.get("secret") != BRIDGE_SECRET:
-            await websocket.close(code=4001, reason="Unauthorized")
-            return
-        
-        await pc_bridge.connect(websocket)
-        await websocket.send_json({"type": "auth_ok"})
-        
-        while True:
-            data = await websocket.receive_json()
-            
-            if data.get("type") == "response":
-                pc_bridge.handle_response(data)
-            elif data.get("type") == "pong":
-                pass  # Keep-alive response
-                
-    except WebSocketDisconnect:
-        pc_bridge.disconnect()
-    except Exception as e:
-        print(f"[PC Bridge] Error: {e}")
-        pc_bridge.disconnect()
-
-@app.get("/api/pc/status")
-async def pc_status():
-    """Статус подключения PC"""
-    return {"connected": pc_bridge.is_connected}
-
-@app.get("/api/pc/files")
-async def pc_list_files(path: str = ""):
-    """Список файлов на PC (через bridge)"""
-    return await pc_bridge.request("list", path)
-
-@app.get("/api/pc/file")
-async def pc_read_file(path: str):
-    """Прочитать файл на PC"""
-    return await pc_bridge.request("read", path)
-
-@app.get("/api/pc/file/download")
-async def pc_download_file(path: str):
-    """Скачать файл с PC через bridge"""
-    result = await pc_bridge.request("download", path, timeout=60.0)
-    
-    if result.get("error"):
-        raise HTTPException(status_code=400, detail=result["error"])
-    
-    import base64
-    content = base64.b64decode(result.get("content", ""))
-    filename = result.get("name", "file")
-    
-    from fastapi.responses import Response
-    return Response(
-        content=content,
-        media_type="application/octet-stream",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
-    )
-
-# ===== ФАЙЛОВЫЙ МЕНЕДЖЕР (локальный, для VPS) =====
+# ===== ФАЙЛОВЫЙ МЕНЕДЖЕР =====
 
 def safe_path(relative_path: str) -> Path:
     """Безопасное разрешение пути (только внутри FILES_ROOT)"""
@@ -622,28 +433,6 @@ async def delete_file(path: str, confirm: bool = False):
             target.rmdir()
         
         return {"status": "ok", "deleted": path}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/files/open")
-async def open_file(path: str):
-    """Открыть/скачать файл"""
-    try:
-        target = safe_path(path)
-        
-        if not target.exists():
-            raise HTTPException(status_code=404, detail="File not found")
-        
-        if not target.is_file():
-            raise HTTPException(status_code=400, detail="Not a file")
-        
-        return FileResponse(
-            path=target,
-            filename=target.name,
-            media_type='application/octet-stream'
-        )
     except HTTPException:
         raise
     except Exception as e:
