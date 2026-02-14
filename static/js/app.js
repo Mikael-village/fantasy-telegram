@@ -686,31 +686,33 @@ function closeView() {
     showView('emptyView');
 }
 
-// Voice input using Web Speech API
-function toggleVoiceInput() {
+// Voice input - Telegram style (hold to record, slide up to lock)
+let voiceStartY = 0;
+let voiceLocked = false;
+
+function startVoiceRecord(event) {
+    event.preventDefault();
+    
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert('��������� ���� �� �������������� � ���� ��������');
+        alert('Голосовой ввод не поддерживается в этом браузере');
         return;
     }
-
-    if (isRecording) {
-        stopRecording();
-    } else {
-        startRecording();
-    }
-}
-
-function startRecording() {
+    
+    // Remember start position for slide detection
+    voiceStartY = event.touches ? event.touches[0].clientY : event.clientY;
+    voiceLocked = false;
+    
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
     recognition.lang = 'ru-RU';
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = true;
 
     recognition.onstart = () => {
         isRecording = true;
+        document.getElementById('voiceContainer').classList.add('recording');
         document.getElementById('voiceBtn').classList.add('recording');
-        document.getElementById('voiceIcon').textContent = '??';
+        document.getElementById('voiceIcon').textContent = '🔴';
     };
 
     recognition.onresult = (event) => {
@@ -720,26 +722,78 @@ function startRecording() {
         document.getElementById('aiTextInput').value = transcript;
     };
 
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        resetVoiceState();
+    };
+
     recognition.onend = () => {
-        isRecording = false;
-        document.getElementById('voiceBtn').classList.remove('recording');
-        document.getElementById('voiceIcon').textContent = '??';
-        
-        // Auto-send if we have text
-        const input = document.getElementById('aiTextInput');
-        if (input.value.trim()) {
-            sendAiMessage();
+        // Only auto-reset if not locked
+        if (!voiceLocked && isRecording) {
+            const input = document.getElementById('aiTextInput');
+            if (input.value.trim()) {
+                sendAiMessage();
+            }
+            resetVoiceState();
         }
     };
 
-    recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        isRecording = false;
-        document.getElementById('voiceBtn').classList.remove('recording');
-        document.getElementById('voiceIcon').textContent = '??';
-    };
-
     recognition.start();
+}
+
+function handleVoiceMove(event) {
+    if (!isRecording) return;
+    
+    const currentY = event.touches ? event.touches[0].clientY : event.clientY;
+    const deltaY = voiceStartY - currentY;
+    
+    // If slid up more than 50px - lock recording
+    if (deltaY > 50 && !voiceLocked) {
+        voiceLocked = true;
+        document.getElementById('voiceContainer').classList.add('locked');
+        document.getElementById('voiceContainer').classList.remove('recording');
+    }
+}
+
+function endVoiceRecord(event) {
+    event.preventDefault();
+    
+    if (!isRecording) return;
+    
+    // If locked, don't stop - wait for explicit send/cancel
+    if (voiceLocked) return;
+    
+    // Stop recognition - onend will handle sending
+    if (recognition) {
+        recognition.stop();
+    }
+}
+
+function sendVoiceMessage() {
+    if (recognition) {
+        recognition.stop();
+    }
+    const input = document.getElementById('aiTextInput');
+    if (input.value.trim()) {
+        sendAiMessage();
+    }
+    resetVoiceState();
+}
+
+function cancelVoiceRecord() {
+    if (recognition) {
+        recognition.stop();
+    }
+    document.getElementById('aiTextInput').value = '';
+    resetVoiceState();
+}
+
+function resetVoiceState() {
+    isRecording = false;
+    voiceLocked = false;
+    document.getElementById('voiceContainer').classList.remove('recording', 'locked');
+    document.getElementById('voiceBtn').classList.remove('recording');
+    document.getElementById('voiceIcon').textContent = '🎤';
 }
 
 function stopRecording() {
