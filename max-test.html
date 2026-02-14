@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAX Deep Link Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #fff; padding: 20px; }
+        h1 { margin-bottom: 20px; font-size: 18px; }
+        .section { margin-bottom: 30px; }
+        .section-title { color: #888; margin-bottom: 10px; font-size: 14px; }
+        .btn { 
+            display: block; 
+            width: 100%; 
+            padding: 12px; 
+            margin-bottom: 8px; 
+            background: #333; 
+            border: none; 
+            border-radius: 8px; 
+            color: #fff; 
+            font-size: 12px; 
+            text-align: left;
+            word-break: break-all;
+        }
+        .btn:active { background: #444; }
+        .status { color: #888; font-size: 11px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 MAX Deep Link Tester</h1>
+    <p class="status">Нажми на кнопку — если MAX откроется, значит работает</p>
+    
+    <div class="section">
+        <div class="section-title">Custom URL Schemes</div>
+        <button class="btn" onclick="tryLink('max://')">max://</button>
+        <button class="btn" onclick="tryLink('max://open')">max://open</button>
+        <button class="btn" onclick="tryLink('max://chat')">max://chat</button>
+        <button class="btn" onclick="tryLink('max://app')">max://app</button>
+        <button class="btn" onclick="tryLink('oneme://')">oneme://</button>
+        <button class="btn" onclick="tryLink('oneme://open')">oneme://open</button>
+        <button class="btn" onclick="tryLink('oneme://chat')">oneme://chat</button>
+        <button class="btn" onclick="tryLink('oneme://app')">oneme://app</button>
+        <button class="btn" onclick="tryLink('vkme://')">vkme://</button>
+        <button class="btn" onclick="tryLink('vkme://open')">vkme://open</button>
+        <button class="btn" onclick="tryLink('vkme://chat')">vkme://chat</button>
+        <button class="btn" onclick="tryLink('vk://')">vk://</button>
+        <button class="btn" onclick="tryLink('vk://vk.com/im')">vk://vk.com/im</button>
+    </div>
+
+    <div class="section">
+        <div class="section-title">App Links (https)</div>
+        <button class="btn" onclick="tryLink('https://max.ru/')">https://max.ru/</button>
+        <button class="btn" onclick="tryLink('https://max.ru/open')">https://max.ru/open</button>
+        <button class="btn" onclick="tryLink('https://max.ru/chat')">https://max.ru/chat</button>
+        <button class="btn" onclick="tryLink('https://max.ru/app')">https://max.ru/app</button>
+        <button class="btn" onclick="tryLink('https://max.ru/im')">https://max.ru/im</button>
+        <button class="btn" onclick="tryLink('https://max.ru/me')">https://max.ru/me</button>
+        <button class="btn" onclick="tryLink('https://max.ru/dialog')">https://max.ru/dialog</button>
+        <button class="btn" onclick="tryLink('https://max.ru/user')">https://max.ru/user</button>
+        <button class="btn" onclick="tryLink('https://m.max.ru/')">https://m.max.ru/</button>
+        <button class="btn" onclick="tryLink('https://chat.max.ru/')">https://chat.max.ru/</button>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Intent URLs (с action)</div>
+        <button class="btn" onclick="tryLink('intent://max.ru/#Intent;package=ru.oneme.app;scheme=https;action=android.intent.action.VIEW;end')">intent://max.ru/ (https, VIEW)</button>
+        <button class="btn" onclick="tryLink('intent://max.ru/open#Intent;package=ru.oneme.app;scheme=https;action=android.intent.action.VIEW;end')">intent://max.ru/open (https, VIEW)</button>
+        <button class="btn" onclick="tryLink('intent://max.ru/chat#Intent;package=ru.oneme.app;scheme=https;action=android.intent.action.VIEW;end')">intent://max.ru/chat (https, VIEW)</button>
+        <button class="btn" onclick="tryLink('intent://#Intent;package=ru.oneme.app;scheme=oneme;action=android.intent.action.VIEW;end')">intent:// (oneme, VIEW)</button>
+        <button class="btn" onclick="tryLink('intent://open#Intent;package=ru.oneme.app;scheme=oneme;action=android.intent.action.VIEW;end')">intent://open (oneme, VIEW)</button>
+        <button class="btn" onclick="tryLink('intent://#Intent;package=ru.oneme.app;scheme=max;action=android.intent.action.VIEW;end')">intent:// (max, VIEW)</button>
+        <button class="btn" onclick="tryLink('intent://open#Intent;package=ru.oneme.app;scheme=max;action=android.intent.action.VIEW;end')">intent://open (max, VIEW)</button>
+        <button class="btn" onclick="tryLink('intent://#Intent;package=ru.oneme.app;scheme=vkme;action=android.intent.action.VIEW;end')">intent:// (vkme, VIEW)</button>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Intent URLs (с MAIN action)</div>
+        <button class="btn" onclick="tryLink('intent://#Intent;package=ru.oneme.app;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;end')">intent:// (MAIN, LAUNCHER)</button>
+        <button class="btn" onclick="tryLink('intent://#Intent;package=ru.oneme.app;action=android.intent.action.MAIN;end')">intent:// (MAIN)</button>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Intent с fallback</div>
+        <button class="btn" onclick="tryLink('intent://#Intent;package=ru.oneme.app;scheme=max;S.browser_fallback_url=https%3A%2F%2Fweb.max.ru;end')">max:// + fallback</button>
+        <button class="btn" onclick="tryLink('intent://#Intent;package=ru.oneme.app;scheme=oneme;S.browser_fallback_url=https%3A%2F%2Fweb.max.ru;end')">oneme:// + fallback</button>
+    </div>
+
+    <script>
+        function tryLink(url) {
+            console.log('Trying:', url);
+            window.location.href = url;
+        }
+    </script>
+</body>
+</html>

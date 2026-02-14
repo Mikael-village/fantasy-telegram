@@ -3,507 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#007AFF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Fantasy Dashboard</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <link rel="stylesheet" href="/static/css/main.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root {
-            --bg-primary: #1a1a2e;
-            --bg-secondary: #16213e;
-            --bg-card: #1f2937;
-            --text-primary: #ffffff;
-            --text-secondary: #9ca3af;
-            --accent: #7c3aed;
-            --accent-light: #a78bfa;
-            --gold: #fbbf24;
-            --green: #22c55e;
-            --blue: #3b82f6;
-            --red: #ef4444;
-            --border: #374151;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            padding: 16px;
-            padding-bottom: 80px;
-        }
-        
-        /* Character Header */
-        .character-header {
-            background: linear-gradient(135deg, var(--accent), var(--bg-secondary));
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 16px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .character-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 150px;
-            height: 150px;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        }
-        
-        .character-top {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-        
-        .avatar {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--gold), #f59e0b);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
-        }
-        
-        .character-info h1 {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-        
-        .character-title {
-            color: var(--gold);
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        .character-class {
-            color: var(--text-secondary);
-            font-size: 12px;
-        }
-        
-        /* Level & XP */
-        .level-section {
-            background: rgba(0,0,0,0.2);
-            border-radius: 12px;
-            padding: 12px;
-        }
-        
-        .level-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        
-        .level-badge {
-            background: var(--gold);
-            color: #000;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 14px;
-        }
-        
-        .xp-text {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        
-        .xp-bar {
-            height: 8px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        
-        .xp-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--gold), #f59e0b);
-            border-radius: 4px;
-            transition: width 0.5s ease;
-        }
-        
-        /* Stats Card */
-        .card {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 16px;
-        }
-        
-        .card-title {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-        
-        .stat-item {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 12px;
-        }
-        
-        .stat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        
-        .stat-name {
-            font-size: 11px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .stat-value {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--accent-light);
-        }
-        
-        .stat-bar {
-            height: 4px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-        
-        .stat-fill {
-            height: 100%;
-            background: var(--accent);
-            border-radius: 2px;
-            transition: width 0.5s ease;
-        }
-        
-        /* Quests */
-        .quest-item {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .quest-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, var(--accent), var(--blue));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-        
-        .quest-info {
-            flex: 1;
-        }
-        
-        .quest-name {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-        
-        .quest-progress {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        
-        .quest-reward {
-            background: rgba(251, 191, 36, 0.2);
-            color: var(--gold);
-            padding: 4px 8px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        
-        .quest-item.completed {
-            opacity: 0.6;
-        }
-        
-        .quest-item.completed .quest-icon {
-            background: var(--green);
-        }
-        
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 24px;
-            color: var(--text-secondary);
-        }
-        
-        .empty-state-icon {
-            font-size: 32px;
-            margin-bottom: 8px;
-        }
-        
-        /* Refresh button */
-        .refresh-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: var(--accent);
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
-            transition: all 0.2s;
-        }
-        
-        .refresh-btn:hover {
-            transform: scale(1.05);
-        }
-        
-        .refresh-btn:active {
-            transform: scale(0.95);
-        }
-        
-        .refresh-btn.loading {
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        
-        /* Last update */
-        .last-update {
-            text-align: center;
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-top: 16px;
-        }
-        
-        /* Loading skeleton */
-        .skeleton {
-            background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-secondary) 50%, var(--bg-card) 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 8px;
-        }
-        
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-    </style>
 </head>
 <body>
-    <!-- Character Header -->
-    <div class="character-header">
-        <div class="character-top">
-            <div class="avatar" id="avatar">🧙</div>
-            <div class="character-info">
-                <h1 id="charName">Помощник Микаела</h1>
-                <div class="character-title" id="charTitle">Хранитель Контекста</div>
-                <div class="character-class" id="charClass">Архимаг Автоматизации</div>
+    <!-- Top Panel -->
+    <div class="top-panel">
+        <div class="top-date" id="currentDate"></div>
+        <div class="status-indicators">
+            <div class="status">
+                <div class="status-dot online" id="pcDot"></div>
+                <span>Сервер</span>
             </div>
-        </div>
-        <div class="level-section">
-            <div class="level-row">
-                <span class="level-badge" id="levelBadge">Ур. 1</span>
-                <span class="xp-text"><span id="xpCurrent">0</span>/<span id="xpTotal">100</span> XP</span>
-            </div>
-            <div class="xp-bar">
-                <div class="xp-fill" id="xpFill" style="width: 0%"></div>
+            <div class="status">
+                <div class="status-dot online" id="aiDot"></div>
+                <span>Помощник</span>
             </div>
         </div>
     </div>
-    
-    <!-- Stats -->
-    <div class="card">
-        <div class="card-title">⚔️ Характеристики</div>
-        <div class="stats-grid" id="statsGrid">
-            <!-- Stats will be loaded here -->
-        </div>
-    </div>
-    
-    <!-- Active Quests -->
-    <div class="card">
-        <div class="card-title">📜 Активные квесты</div>
-        <div id="questsList">
-            <div class="empty-state">
-                <div class="empty-state-icon">🎯</div>
-                <div>Нет активных квестов</div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Achievements -->
-    <div class="card">
-        <div class="card-title">🏆 Достижения</div>
-        <div id="achievementsList">
-            <div class="empty-state">
-                <div class="empty-state-icon">⭐</div>
-                <div>Достижения появятся здесь</div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="last-update" id="lastUpdate">Загрузка...</div>
-    
-    <!-- Refresh button -->
-    <button class="refresh-btn" id="refreshBtn" onclick="loadData()">🔄</button>
 
+    <!-- Main Area -->
+    <div class="main-area">
+        <!-- Left Panel - Search services -->
+        <div class="side-panel">
+            <button class="side-btn" disabled title="Заглушка 1">➊</button>
+            <button class="side-btn" disabled title="Заглушка 2">➋</button>
+            <button class="side-btn" disabled title="Заглушка 3">➌</button>
+            <button class="side-btn" disabled title="Заглушка 4">➍</button>
+            <button class="side-btn" disabled title="Заглушка 5">➎</button>
+        </div>
+
+        <!-- Center Zone -->
+        <div class="center-zone">
+            <!-- Empty state (default) -->
+            <div class="content-view active" id="emptyView">
+                <div class="empty-center">Выберите раздел</div>
+            </div>
+
+            <!-- File browser -->
+            <div class="content-view" id="fileBrowser">
+                <div class="browser-header">
+                    <button class="back-btn" onclick="goBack()">←</button>
+                    <div class="current-path" id="currentPath"></div>
+                </div>
+                <div class="breadcrumb" id="fileBreadcrumb"></div>
+                <div class="file-list" id="fileList"></div>
+            </div>
+
+            <!-- Downloads + Clients view -->
+            <div class="content-view" id="downloadsView">
+                <div class="folder-tabs">
+                    <button class="folder-tab active" id="tabDownloads" onclick="switchTab('Загрузки', this)">Загрузки</button>
+                    <button class="folder-tab" id="tabClients" onclick="switchTab('КЛИЕНТЫ', this)">Клиенты</button>
+                </div>
+                <div class="breadcrumb" id="downloadsBreadcrumb"></div>
+                <div class="file-list" id="downloadsFileList"></div>
+            </div>
+
+            <!-- AI Chat -->
+            <div class="content-view" id="aiChatView">
+                <div class="ai-chat-container">
+                    <div class="ai-chat-header">
+                        <button class="back-btn" onclick="closeView()">←</button>
+                        <div class="ai-chat-title">💬 Помощник</div>
+                        <div class="ai-status" id="aiStatusIndicator">🟢</div>
+                    </div>
+                    <div class="ai-chat-messages" id="aiChatMessages">
+                        <div class="ai-message assistant">
+                            <div class="message-content">Привет! Я твой AI-помощник. Нажми на микрофон и говори — я отвечу голосом и текстом.</div>
+                        </div>
+                    </div>
+                    <div class="ai-chat-input">
+                        <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceInput()">
+                            <span id="voiceIcon">🎤</span>
+                        </button>
+                        <input type="text" id="aiTextInput" placeholder="Или напиши сообщение..." onkeypress="handleAiInputKeypress(event)">
+                        <button class="send-btn" onclick="sendAiMessage()">➤</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CRM iframe -->
+            <div class="content-view" id="crmView">
+                <div class="iframe-view">
+                    <div class="iframe-header">
+                        <button class="back-btn" onclick="closeView()">←</button>
+                        <div class="iframe-title">CRM</div>
+                    </div>
+                    <iframe class="iframe-content" id="crmIframe" src="about:blank"></iframe>
+                </div>
+            </div>
+
+            <!-- Service iframe -->
+            <div class="content-view" id="serviceView">
+                <div class="iframe-view">
+                    <div class="iframe-header">
+                        <button class="back-btn" onclick="closeView()">←</button>
+                        <div class="iframe-title" id="serviceTitle"></div>
+                    </div>
+                    <iframe class="iframe-content" id="serviceIframe" src="about:blank"></iframe>
+                </div>
+            </div>
+
+            <!-- Helper view -->
+            <div class="content-view" id="helperView">
+                <div class="helper-view">
+                    <div class="helper-avatar">🤖</div>
+                    
+                    <div class="helper-slots">
+                        <div class="slot-column">
+                            <div class="slot">1</div>
+                            <div class="slot">2</div>
+                            <div class="slot">3</div>
+                        </div>
+                        <div style="width: 60px;"></div>
+                        <div class="slot-column">
+                            <div class="slot">4</div>
+                            <div class="slot">5</div>
+                            <div class="slot">6</div>
+                        </div>
+                    </div>
+
+                    <div class="helper-buttons">
+                        <button class="helper-btn" onclick="showFile('USER.md')">📜 Правила</button>
+                        <button class="helper-btn" onclick="showFile('AGENTS.md')">📖 Руководства</button>
+                    </div>
+
+                    <div class="skills-section">
+                        <div class="skills-title">Скиллы</div>
+                        <input type="text" class="skills-search" id="skillsSearch" placeholder="🔍 Поиск скилла..." oninput="filterSkills(this.value)">
+                        <div class="skills-categories" id="skillsCategories">
+                            <div class="skill-item" style="color: var(--text-secondary)">Загрузка...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Additional services -->
+        <div class="side-panel">
+            <button class="side-btn" disabled title="Заглушка">⬜</button>
+            <button class="side-btn" onclick="openMessenger('Mail')" title="Почта"><img src="https://www.google.com/s2/favicons?domain=mail.ru&sz=32" alt="Mail"></button>
+            <button class="side-btn" onclick="openMessenger('WhatsApp')" title="WhatsApp"><img src="https://www.google.com/s2/favicons?domain=whatsapp.com&sz=32" alt="WA"></button>
+            <button class="side-btn" onclick="openMessenger('MAX')" title="MAX"><img src="/max-icon-small.png" alt="MAX"></button>
+            <button class="side-btn" onclick="openMessenger('Telegram')" title="Telegram"><img src="https://www.google.com/s2/favicons?domain=telegram.org&sz=32" alt="TG"></button>
+        </div>
+    </div>
+
+    <!-- File Actions Modal -->
+    <div class="file-actions-modal" id="fileActionsModal" style="display:none" onclick="closeFileActions(event)">
+        <div class="file-actions-content" onclick="event.stopPropagation()">
+            <div class="file-actions-title" id="fileActionsTitle">file.txt</div>
+            <button class="file-action-btn" onclick="fileActionOpen()">
+                <span class="icon">👁️</span> Открыть
+            </button>
+            <button class="file-action-btn" onclick="fileActionCopy()">
+                <span class="icon">📋</span> Копировать
+            </button>
+            <button class="file-action-btn" onclick="fileActionDownload()">
+                <span class="icon">📥</span> Скачать
+            </button>
+            <button class="file-action-btn file-action-cancel" onclick="closeFileActions()">
+                Отмена
+            </button>
+        </div>
+    </div>
+
+    <!-- Clipboard indicator -->
+    <div class="clipboard-indicator" id="clipboardIndicator">
+        <span>📋</span>
+        <span id="clipboardFileName">Файл скопирован</span>
+        <button onclick="clearClipboard()" style="background:none;border:none;color:white;font-size:16px;cursor:pointer">✕</button>
+    </div>
+
+    <!-- Messenger popup -->
+    <div class="overlay" id="overlay" onclick="closeMessengerPopup()"></div>
+    <div class="messenger-popup" id="messengerPopup">
+        <div class="messenger-grid">
+            <button class="messenger-btn" onclick="openMessenger('Mail')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Mail_%28iOS%29.svg" alt="Mail">
+            </button>
+            <button class="messenger-btn" onclick="openMessenger('MAX')">
+                <img src="/max-icon-small.png" alt="MAX">
+            </button>
+            <button class="messenger-btn" onclick="openMessenger('WhatsApp')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+            </button>
+            <button class="messenger-btn" onclick="openMessenger('Telegram')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram">
+            </button>
+        </div>
+    </div>
+
+    <!-- Bottom Panel -->
+    <div class="bottom-panel">
+        <div class="bottom-nav">
+            <button class="nav-btn" onclick="openArchive()">
+                <span class="nav-btn-icon">🗄️</span>
+                <span class="nav-btn-label">Архив</span>
+            </button>
+            <button class="nav-btn" onclick="toggleMessengerPopup()">
+                <span class="nav-btn-icon">💬</span>
+                <span class="nav-btn-label">Мессенджеры</span>
+            </button>
+            <button class="nav-btn center" onclick="openAiChat()">
+                <span class="nav-btn-icon">🎤</span>
+                <span class="nav-btn-label">AI</span>
+            </button>
+            <button class="nav-btn" onclick="openHelper()">
+                <span class="nav-btn-icon">🤖</span>
+                <span class="nav-btn-label">Помощник</span>
+            </button>
+            <button class="nav-btn" onclick="openDownloads()">
+                <span class="nav-btn-icon">📥</span>
+                <span class="nav-btn-label">Загрузки</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
     <script>
-        // Telegram WebApp
-        const tg = window.Telegram?.WebApp;
-        if (tg) {
-            tg.ready();
-            tg.expand();
-            
-            // Apply Telegram theme
-            if (tg.themeParams.bg_color) {
-                document.documentElement.style.setProperty('--bg-primary', tg.themeParams.bg_color);
-            }
-            if (tg.themeParams.secondary_bg_color) {
-                document.documentElement.style.setProperty('--bg-secondary', tg.themeParams.secondary_bg_color);
-                document.documentElement.style.setProperty('--bg-card', tg.themeParams.secondary_bg_color);
-            }
-        }
-        
-        // Load data from API
-        async function loadData() {
-            const btn = document.getElementById('refreshBtn');
-            btn.classList.add('loading');
-            
-            try {
-                const response = await fetch('/api/data');
-                const data = await response.json();
-                renderData(data);
-                document.getElementById('lastUpdate').textContent = 
-                    'Обновлено: ' + new Date().toLocaleTimeString('ru-RU');
-            } catch (error) {
-                console.error('Error loading data:', error);
-                document.getElementById('lastUpdate').textContent = 'Ошибка загрузки';
-            } finally {
-                btn.classList.remove('loading');
-            }
-        }
-        
-        function renderData(data) {
-            const char = data.character || {};
-            
-            // Character info
-            document.getElementById('charName').textContent = char.name || 'Помощник Микаела';
-            document.getElementById('charTitle').textContent = char.title || 'Хранитель Контекста';
-            document.getElementById('charClass').textContent = char.class || 'Архимаг Автоматизации';
-            
-            // Level & XP
-            const level = char.level || 1;
-            const xp = char.xp || { current: 0, total: 100 };
-            document.getElementById('levelBadge').textContent = `Ур. ${level}`;
-            document.getElementById('xpCurrent').textContent = xp.current;
-            document.getElementById('xpTotal').textContent = xp.total;
-            document.getElementById('xpFill').style.width = `${(xp.current / xp.total) * 100}%`;
-            
-            // Stats
-            const statsGrid = document.getElementById('statsGrid');
-            const stats = char.stats || {};
-            statsGrid.innerHTML = '';
-            
-            const statIcons = { STR: '💪', INT: '🧠', WIS: '📚', DEX: '⚡', CHR: '💬' };
-            
-            for (const [key, stat] of Object.entries(stats)) {
-                const div = document.createElement('div');
-                div.className = 'stat-item';
-                div.innerHTML = `
-                    <div class="stat-header">
-                        <span class="stat-name">${statIcons[key] || '📊'} ${stat.label || key}</span>
-                        <span class="stat-value">${stat.value || 0}</span>
-                    </div>
-                    <div class="stat-bar">
-                        <div class="stat-fill" style="width: ${stat.value || 0}%"></div>
-                    </div>
-                `;
-                statsGrid.appendChild(div);
-            }
-            
-            // Quests
-            const questsList = document.getElementById('questsList');
-            const quests = char.quests || [];
-            
-            if (quests.length > 0) {
-                questsList.innerHTML = '';
-                quests.forEach(quest => {
-                    const div = document.createElement('div');
-                    div.className = `quest-item ${quest.completed ? 'completed' : ''}`;
-                    div.innerHTML = `
-                        <div class="quest-icon">${quest.completed ? '✅' : '📋'}</div>
-                        <div class="quest-info">
-                            <div class="quest-name">${quest.name || 'Квест'}</div>
-                            <div class="quest-progress">${quest.description || ''}</div>
-                        </div>
-                        ${quest.reward ? `<div class="quest-reward">+${quest.reward} XP</div>` : ''}
-                    `;
-                    questsList.appendChild(div);
-                });
-            } else {
-                questsList.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🎯</div>
-                        <div>Нет активных квестов</div>
-                    </div>
-                `;
-            }
-            
-            // Achievements
-            const achievementsList = document.getElementById('achievementsList');
-            const achievements = char.achievements || [];
-            
-            if (achievements.length > 0) {
-                achievementsList.innerHTML = '';
-                achievements.forEach(ach => {
-                    const div = document.createElement('div');
-                    div.className = 'quest-item';
-                    div.innerHTML = `
-                        <div class="quest-icon" style="background: linear-gradient(135deg, #fbbf24, #f59e0b);">🏆</div>
-                        <div class="quest-info">
-                            <div class="quest-name">${ach.name || 'Достижение'}</div>
-                            <div class="quest-progress">${ach.description || ''}</div>
-                        </div>
-                    `;
-                    achievementsList.appendChild(div);
-                });
-            }
-        }
-        
-        // Load on start
-        loadData();
-        
-        // Auto-refresh every 30 seconds
-        setInterval(loadData, 30000);
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" })
+        .then(reg => {
+          reg.addEventListener("updatefound", () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener("statechange", () => {
+              if (newWorker.state === "activated") {
+                window.location.reload();
+              }
+            });
+          });
+        });
+    }
     </script>
 </body>
 </html>

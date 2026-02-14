@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#007AFF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Fantasy Dashboard</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <link rel="stylesheet" href="/static/css/main.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <!-- Top Panel -->
+    <div class="top-panel">
+        <div class="top-date" id="currentDate"></div>
+        <div class="status-indicators">
+            <div class="status">
+                <div class="status-dot online" id="pcDot"></div>
+                <span>Сервер</span>
+            </div>
+            <div class="status">
+                <div class="status-dot online" id="aiDot"></div>
+                <span>Помощник</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Area -->
+    <div class="main-area">
+        <!-- Left Panel - Search services -->
+        <div class="side-panel">
+            <button class="side-btn" onclick="openService('https://brand-search.ru/', 'Поиск ТЗ', false)" title="brand-search.ru">🔍</button>
+            <button class="side-btn" onclick="openService('https://linkmark.ru/', 'Linkmark', true)" title="linkmark.ru">🔗</button>
+            <button class="side-btn" onclick="openService('https://www1.fips.ru/registers-web/action?acName=clickRegister&regName=RUTM', 'ФИПС ТЗ', false)" title="Реестр ТЗ">📋</button>
+            <button class="side-btn" onclick="openService('https://www1.fips.ru/registers-web/action?acName=clickRegister&regName=RUTMAP', 'ФИПС Заявки', false)" title="Реестр заявок">📝</button>
+            <button class="side-btn" onclick="openService('https://www.pochta.ru/tracking', 'Почта РФ', true)" title="Почта РФ">📦</button>
+        </div>
+
+        <!-- Center Zone -->
+        <div class="center-zone">
+            <!-- Empty state (default) -->
+            <div class="content-view active" id="emptyView">
+                <div class="empty-center">Выберите раздел</div>
+            </div>
+
+            <!-- File browser -->
+            <div class="content-view" id="fileBrowser">
+                <div class="browser-header">
+                    <button class="back-btn" onclick="goBack()">←</button>
+                    <div class="current-path" id="currentPath"></div>
+                </div>
+                <div class="breadcrumb" id="fileBreadcrumb"></div>
+                <div class="file-list" id="fileList"></div>
+            </div>
+
+            <!-- Downloads + Clients view -->
+            <div class="content-view" id="downloadsView">
+                <div class="folder-tabs">
+                    <button class="folder-tab active" id="tabDownloads" onclick="switchTab('Загрузки', this)">Загрузки</button>
+                    <button class="folder-tab" id="tabClients" onclick="switchTab('КЛИЕНТЫ', this)">Клиенты</button>
+                </div>
+                <div class="breadcrumb" id="downloadsBreadcrumb"></div>
+                <div class="file-list" id="downloadsFileList"></div>
+            </div>
+
+            <!-- AI Chat -->
+            <div class="content-view" id="aiChatView">
+                <div class="ai-chat-container">
+                    <div class="ai-chat-header">
+                        <button class="back-btn" onclick="closeView()">←</button>
+                        <div class="ai-chat-title">💬 Помощник</div>
+                        <div class="ai-status" id="aiStatusIndicator">🟢</div>
+                    </div>
+                    <div class="ai-chat-messages" id="aiChatMessages">
+                        <div class="ai-message assistant">
+                            <div class="message-content">Привет! Я твой AI-помощник. Нажми на микрофон и говори — я отвечу голосом и текстом.</div>
+                        </div>
+                    </div>
+                    <div class="ai-chat-input">
+                        <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceInput()">
+                            <span id="voiceIcon">🎤</span>
+                        </button>
+                        <input type="text" id="aiTextInput" placeholder="Или напиши сообщение..." onkeypress="handleAiInputKeypress(event)">
+                        <button class="send-btn" onclick="sendAiMessage()">➤</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CRM iframe -->
+            <div class="content-view" id="crmView">
+                <div class="iframe-view">
+                    <div class="iframe-header">
+                        <button class="back-btn" onclick="closeView()">←</button>
+                        <div class="iframe-title">CRM</div>
+                    </div>
+                    <iframe class="iframe-content" id="crmIframe" src="about:blank"></iframe>
+                </div>
+            </div>
+
+            <!-- Service iframe -->
+            <div class="content-view" id="serviceView">
+                <div class="iframe-view">
+                    <div class="iframe-header">
+                        <button class="back-btn" onclick="closeView()">←</button>
+                        <div class="iframe-title" id="serviceTitle"></div>
+                    </div>
+                    <iframe class="iframe-content" id="serviceIframe" src="about:blank"></iframe>
+                </div>
+            </div>
+
+            <!-- Helper view -->
+            <div class="content-view" id="helperView">
+                <div class="helper-view">
+                    <div class="helper-avatar">🤖</div>
+                    
+                    <div class="helper-slots">
+                        <div class="slot-column">
+                            <div class="slot">1</div>
+                            <div class="slot">2</div>
+                            <div class="slot">3</div>
+                        </div>
+                        <div style="width: 60px;"></div>
+                        <div class="slot-column">
+                            <div class="slot">4</div>
+                            <div class="slot">5</div>
+                            <div class="slot">6</div>
+                        </div>
+                    </div>
+
+                    <div class="helper-buttons">
+                        <button class="helper-btn" onclick="showFile('USER.md')">📜 Правила</button>
+                        <button class="helper-btn" onclick="showFile('AGENTS.md')">📖 Руководства</button>
+                    </div>
+
+                    <div class="skills-section">
+                        <div class="skills-title">Скиллы</div>
+                        <input type="text" class="skills-search" id="skillsSearch" placeholder="🔍 Поиск скилла..." oninput="filterSkills(this.value)">
+                        <div class="skills-categories" id="skillsCategories">
+                            <div class="skill-item" style="color: var(--text-secondary)">Загрузка...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Additional services -->
+        <div class="side-panel">
+            <button class="side-btn" onclick="openService('https://www1.fips.ru/registers-web/', 'ФИПС', false)" title="Все реестры">🏛️</button>
+            <button class="side-btn" onclick="alert('В разработке')" title="Избранное">⭐</button>
+            <button class="side-btn" onclick="alert('В разработке')" title="Недавние">🕐</button>
+            <button class="side-btn" onclick="alert('В разработке')" title="Поиск">🔎</button>
+            <button class="side-btn" onclick="openCRM()" title="CRM">📊</button>
+        </div>
+    </div>
+
+    <!-- File Actions Modal -->
+    <div class="file-actions-modal" id="fileActionsModal" style="display:none" onclick="closeFileActions(event)">
+        <div class="file-actions-content" onclick="event.stopPropagation()">
+            <div class="file-actions-title" id="fileActionsTitle">file.txt</div>
+            <button class="file-action-btn" onclick="fileActionOpen()">
+                <span class="icon">👁️</span> Открыть
+            </button>
+            <button class="file-action-btn" onclick="fileActionCopy()">
+                <span class="icon">📋</span> Копировать
+            </button>
+            <button class="file-action-btn" onclick="fileActionDownload()">
+                <span class="icon">📥</span> Скачать
+            </button>
+            <button class="file-action-btn file-action-cancel" onclick="closeFileActions()">
+                Отмена
+            </button>
+        </div>
+    </div>
+
+    <!-- Clipboard indicator -->
+    <div class="clipboard-indicator" id="clipboardIndicator">
+        <span>📋</span>
+        <span id="clipboardFileName">Файл скопирован</span>
+        <button onclick="clearClipboard()" style="background:none;border:none;color:white;font-size:16px;cursor:pointer">✕</button>
+    </div>
+
+    <!-- Messenger popup -->
+    <div class="overlay" id="overlay" onclick="closeMessengerPopup()"></div>
+    <div class="messenger-popup" id="messengerPopup">
+        <div class="messenger-grid">
+            <button class="messenger-btn" onclick="openMessenger('Mail')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Mail_%28iOS%29.svg" alt="Mail">
+            </button>
+            <button class="messenger-btn" onclick="openMessenger('MAX')">
+                <img src="/max-icon-small.png" alt="MAX">
+            </button>
+            <button class="messenger-btn" onclick="openMessenger('WhatsApp')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+            </button>
+            <button class="messenger-btn" onclick="openMessenger('Telegram')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram">
+            </button>
+        </div>
+    </div>
+
+    <!-- Bottom Panel -->
+    <div class="bottom-panel">
+        <div class="bottom-nav">
+            <button class="nav-btn" onclick="openArchive()">
+                <span class="nav-btn-icon">🗄️</span>
+                <span class="nav-btn-label">Архив</span>
+            </button>
+            <button class="nav-btn" onclick="toggleMessengerPopup()">
+                <span class="nav-btn-icon">💬</span>
+                <span class="nav-btn-label">Мессенджеры</span>
+            </button>
+            <button class="nav-btn center" onclick="openAiChat()">
+                <span class="nav-btn-icon">🎤</span>
+                <span class="nav-btn-label">AI</span>
+            </button>
+            <button class="nav-btn" onclick="openHelper()">
+                <span class="nav-btn-icon">🤖</span>
+                <span class="nav-btn-label">Помощник</span>
+            </button>
+            <button class="nav-btn" onclick="openDownloads()">
+                <span class="nav-btn-icon">📥</span>
+                <span class="nav-btn-label">Загрузки</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" })
+        .then(reg => {
+          reg.addEventListener("updatefound", () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener("statechange", () => {
+              if (newWorker.state === "activated") {
+                window.location.reload();
+              }
+            });
+          });
+        });
+    }
+    </script>
+</body>
+</html>

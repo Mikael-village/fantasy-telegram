@@ -12,16 +12,23 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException, Header, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 import httpx
+from skills_parser import parse_registry_md
 
 # Конфигурация
 API_SECRET = os.getenv('API_SECRET', 'fantasy-secret-2026')
+BRIDGE_SECRET = os.getenv('BRIDGE_SECRET', 'fantasy-bridge-2026')
 BOT_TOKEN = os.getenv('BOT_TOKEN', '')
 OWNER_CHAT_ID = os.getenv('OWNER_CHAT_ID', '')
 DATA_FILE = Path(__file__).parent / 'data.json'
 INDEX_FILE = Path(__file__).parent / 'index.html'
 CHAT_FILE = Path(__file__).parent / 'chat_history.json'
+SOUL_FILE = Path(__file__).parent / 'soul.json'
+
+# Файловый менеджер - базовая директория
+FILES_ROOT = Path(os.getenv('FILES_ROOT', 'C:/BRANDONLINE'))
 
 # Telegram API
 TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
@@ -41,6 +48,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Статические файлы (CSS, JS)
+STATIC_DIR = Path(__file__).parent / 'static'
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # ===== WEBSOCKET MANAGER =====
 
@@ -158,6 +170,64 @@ async def root():
         return FileResponse(INDEX_FILE, media_type='text/html')
     return HTMLResponse("<h1>Fantasy Dashboard</h1><p>index.html not found</p>")
 
+# ===== PWA STATIC FILES =====
+
+@app.get("/max-test")
+async def max_test():
+    """MAX Deep Link Tester"""
+    test_file = Path(__file__).parent / 'max-test.html'
+    if test_file.exists():
+        return FileResponse(test_file, media_type='text/html')
+    raise HTTPException(status_code=404, detail="Test page not found")
+
+@app.get("/deeplink-test")
+async def deeplink_test():
+    """Universal Deep Link Tester"""
+    test_file = Path(__file__).parent / 'deeplink-test.html'
+    if test_file.exists():
+        return FileResponse(test_file, media_type='text/html')
+    raise HTTPException(status_code=404, detail="Test page not found")
+
+@app.get("/manifest.json")
+async def manifest():
+    """PWA Manifest"""
+    manifest_file = Path(__file__).parent / 'manifest.json'
+    if manifest_file.exists():
+        return FileResponse(manifest_file, media_type='application/manifest+json')
+    raise HTTPException(status_code=404, detail="Manifest not found")
+
+@app.get("/sw.js")
+async def service_worker():
+    """Service Worker"""
+    sw_file = Path(__file__).parent / 'sw.js'
+    if sw_file.exists():
+        return FileResponse(sw_file, media_type='application/javascript')
+    raise HTTPException(status_code=404, detail="Service worker not found")
+
+@app.get("/icon-{size}.png")
+async def pwa_icon(size: int):
+    """PWA Icons"""
+    icon_file = Path(__file__).parent / f'icon-{size}.png'
+    if icon_file.exists():
+        return FileResponse(icon_file, media_type='image/png')
+    raise HTTPException(status_code=404, detail="Icon not found")
+
+@app.get("/max-icon.png")
+async def max_icon():
+    """MAX Messenger Icon"""
+    icon_file = Path(__file__).parent / 'max-icon.png'
+    if icon_file.exists():
+        return FileResponse(icon_file, media_type='image/png')
+    raise HTTPException(status_code=404, detail="MAX icon not found")
+
+@app.get("/max-icon-small.png")
+async def max_icon_small():
+    """MAX Messenger Icon (small)"""
+    icon_file = Path(__file__).parent / 'max-icon-small.png'
+    if icon_file.exists():
+        return FileResponse(icon_file, media_type='image/png')
+    raise HTTPException(status_code=404, detail="MAX icon not found")
+
 @app.get("/chat", response_class=HTMLResponse)
 async def chat_page():
     """Страница чата"""
@@ -196,6 +266,86 @@ async def health():
         "version": "2.0.0",
         "connections": len(manager.active_connections)
     }
+
+@app.get("/api/soul")
+async def get_soul():
+    """Получить данные вкладки Душа (папка клиентов)"""
+    try:
+        if SOUL_FILE.exists():
+            with open(SOUL_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        else:
+            return {
+                "error": "Soul data not synced yet",
+                "items": []
+            }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "items": []
+        }
+
+# AI Status tracking
+AI_STATUS_FILE = Path(__file__).parent / 'ai_status.json'
+
+@app.get("/api/ai/status")
+async def get_ai_status():
+    """Проверить статус AI (Помощник Микаела)"""
+    try:
+        if AI_STATUS_FILE.exists():
+            with open(AI_STATUS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                
+            # Проверяем время последнего пинга
+            last_ping = datetime.fromisoformat(data.get('last_ping', '2000-01-01'))
+            diff_seconds = (datetime.now() - last_ping).total_seconds()
+            
+            # Онлайн если пинг был меньше 2 минут назад
+            return {
+                "online": diff_seconds < 120,
+                "last_ping": data.get('last_ping'),
+                "diff_seconds": int(diff_seconds)
+            }
+        else:
+            return {"online": False, "last_ping": None}
+    except Exception as e:
+        return {"online": False, "error": str(e)}
+
+@app.post("/api/ai/ping")
+async def ai_ping():
+    """AI отправляет пинг чтобы показать что онлайн"""
+    try:
+        data = {
+            "last_ping": datetime.now().isoformat(),
+            "status": "online"
+        }
+        with open(AI_STATUS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f)
+        return {"status": "ok", "ping": data["last_ping"]}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+# Clawdbot API через Tailscale
+CLAWDBOT_API_URL = "https://desktop-a857bb7.tail58eca6.ts.net/v1/chat/completions"
+
+@app.post("/api/ai/chat")
+async def ai_chat(request: Request):
+    """Прокси для Clawdbot API (через Tailscale)"""
+    try:
+        data = await request.json()
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                CLAWDBOT_API_URL,
+                json=data,
+                headers={"Content-Type": "application/json"}
+            )
+            return response.json()
+    except httpx.TimeoutException:
+        return {"error": {"message": "AI не отвечает (timeout)", "type": "timeout"}}
+    except httpx.ConnectError:
+        return {"error": {"message": "Нет связи с AI (PC offline?)", "type": "connection_error"}}
+    except Exception as e:
+        return {"error": {"message": str(e), "type": "server_error"}}
 
 @app.get("/api/chat/history")
 async def get_chat_history(limit: int = 50):
@@ -268,6 +418,358 @@ async def post_status(request: Request):
         return {"status": "ok"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# ===== PC BRIDGE =====
+
+class PCBridge:
+    """Менеджер соединения с PC"""
+    
+    def __init__(self):
+        self.pc_websocket: WebSocket = None
+        self.pending_requests: Dict[str, asyncio.Future] = {}
+        self.request_counter = 0
+    
+    @property
+    def is_connected(self):
+        return self.pc_websocket is not None
+    
+    async def connect(self, websocket: WebSocket):
+        self.pc_websocket = websocket
+        print(f"[PC Bridge] PC connected")
+    
+    def disconnect(self):
+        self.pc_websocket = None
+        # Cancel pending requests
+        for future in self.pending_requests.values():
+            if not future.done():
+                future.set_exception(Exception("PC disconnected"))
+        self.pending_requests.clear()
+        print(f"[PC Bridge] PC disconnected")
+    
+    async def request(self, action: str, path: str = "", timeout: float = 30.0) -> dict:
+        """Отправить запрос к PC и ждать ответа"""
+        if not self.is_connected:
+            return {"error": "PC not connected", "pc_online": False}
+        
+        self.request_counter += 1
+        request_id = f"req_{self.request_counter}"
+        
+        future = asyncio.get_event_loop().create_future()
+        self.pending_requests[request_id] = future
+        
+        try:
+            await self.pc_websocket.send_json({
+                "type": "request",
+                "id": request_id,
+                "action": action,
+                "path": path
+            })
+            
+            result = await asyncio.wait_for(future, timeout=timeout)
+            return result
+        except asyncio.TimeoutError:
+            return {"error": "Request timeout"}
+        except Exception as e:
+            return {"error": str(e)}
+        finally:
+            self.pending_requests.pop(request_id, None)
+    
+    def handle_response(self, data: dict):
+        """Обработать ответ от PC"""
+        request_id = data.get("id")
+        if request_id and request_id in self.pending_requests:
+            future = self.pending_requests[request_id]
+            if not future.done():
+                future.set_result(data)
+
+pc_bridge = PCBridge()
+
+@app.websocket("/ws/pc-bridge")
+async def websocket_pc_bridge(websocket: WebSocket):
+    """WebSocket для подключения PC"""
+    await websocket.accept()
+    
+    try:
+        # Ждём авторизацию
+        auth_data = await asyncio.wait_for(websocket.receive_json(), timeout=10)
+        
+        if auth_data.get("type") != "auth" or auth_data.get("secret") != BRIDGE_SECRET:
+            await websocket.close(code=4001, reason="Unauthorized")
+            return
+        
+        await pc_bridge.connect(websocket)
+        await websocket.send_json({"type": "auth_ok"})
+        
+        while True:
+            data = await websocket.receive_json()
+            
+            if data.get("type") == "response":
+                pc_bridge.handle_response(data)
+            elif data.get("type") == "pong":
+                pass  # Keep-alive response
+                
+    except WebSocketDisconnect:
+        pc_bridge.disconnect()
+    except Exception as e:
+        print(f"[PC Bridge] Error: {e}")
+        pc_bridge.disconnect()
+
+@app.get("/api/pc/status")
+async def pc_status():
+    """Статус подключения PC"""
+    return {"connected": pc_bridge.is_connected}
+
+@app.get("/api/pc/files")
+async def pc_list_files(path: str = ""):
+    """Список файлов на PC (через bridge)"""
+    return await pc_bridge.request("list", path)
+
+@app.get("/api/pc/file")
+async def pc_read_file(path: str):
+    """Прочитать файл на PC"""
+    return await pc_bridge.request("read", path)
+
+@app.get("/api/pc/file/download")
+async def pc_download_file(path: str):
+    """Скачать файл с PC через bridge"""
+    result = await pc_bridge.request("download", path, timeout=60.0)
+    
+    if result.get("error"):
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    import base64
+    content = base64.b64decode(result.get("content", ""))
+    filename = result.get("name", "file")
+    
+    from fastapi.responses import Response
+    return Response(
+        content=content,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+@app.post("/api/pc/save-to-downloads")
+async def pc_save_to_downloads(path: str):
+    """Сохранить файл в папку Загрузки на PC"""
+    result = await pc_bridge.request("save_to_downloads", path, timeout=30.0)
+    
+    if result.get("error"):
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    return result
+
+# ===== SKILLS API (из _REGISTRY.md) =====
+
+@app.get("/api/skills")
+async def get_skills():
+    """Получить список скиллов из _REGISTRY.md через PC Bridge"""
+    try:
+        # Читаем _REGISTRY.md с ПК
+        result = await pc_bridge.request("read", "Jarvis.Mir/Jarvis.Dom/skills/_REGISTRY.md")
+        
+        if result.get("error"):
+            # Если PC Bridge недоступен, вернуть кэш или пустой ответ
+            return {"categories": {}, "error": "PC Bridge unavailable"}
+        
+        content = result.get("content", "")
+        categories = parse_registry_md(content)
+        
+        return {"categories": categories}
+    except Exception as e:
+        return {"categories": {}, "error": str(e)}
+
+# ===== ФАЙЛОВЫЙ МЕНЕДЖЕР (локальный, для VPS) =====
+
+def safe_path(relative_path: str) -> Path:
+    """Безопасное разрешение пути (только внутри FILES_ROOT)"""
+    # Нормализуем путь
+    clean_path = relative_path.replace('\\', '/').strip('/')
+    full_path = (FILES_ROOT / clean_path).resolve()
+    
+    # Проверяем что путь внутри FILES_ROOT
+    try:
+        full_path.relative_to(FILES_ROOT.resolve())
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Access denied: path outside root")
+    
+    return full_path
+
+@app.get("/api/files")
+async def list_files(path: str = ""):
+    """Список файлов и папок"""
+    try:
+        target = safe_path(path)
+        
+        if not target.exists():
+            raise HTTPException(status_code=404, detail="Path not found")
+        
+        if not target.is_dir():
+            raise HTTPException(status_code=400, detail="Not a directory")
+        
+        items = []
+        for item in sorted(target.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower())):
+            try:
+                stat = item.stat()
+                items.append({
+                    "name": item.name,
+                    "type": "folder" if item.is_dir() else "file",
+                    "size": stat.st_size if item.is_file() else None,
+                    "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    "extension": item.suffix.lower() if item.is_file() else None
+                })
+            except (PermissionError, OSError):
+                continue
+        
+        return {
+            "path": path,
+            "parent": str(Path(path).parent) if path else None,
+            "items": items
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/file")
+async def read_file(path: str):
+    """Прочитать содержимое файла"""
+    try:
+        target = safe_path(path)
+        
+        if not target.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        if not target.is_file():
+            raise HTTPException(status_code=400, detail="Not a file")
+        
+        # Проверяем размер (макс 1MB для текстовых)
+        if target.stat().st_size > 1_000_000:
+            raise HTTPException(status_code=413, detail="File too large (max 1MB)")
+        
+        # Определяем тип файла
+        text_extensions = {'.txt', '.md', '.json', '.py', '.js', '.html', '.css', '.yaml', '.yml', '.xml', '.csv', '.log', '.bat', '.sh', '.ps1', '.env', '.gitignore', '.toml', '.ini', '.cfg'}
+        
+        if target.suffix.lower() in text_extensions or target.suffix == '':
+            try:
+                content = target.read_text(encoding='utf-8')
+                return {
+                    "path": path,
+                    "name": target.name,
+                    "content": content,
+                    "type": "text",
+                    "size": len(content)
+                }
+            except UnicodeDecodeError:
+                return {
+                    "path": path,
+                    "name": target.name,
+                    "content": None,
+                    "type": "binary",
+                    "message": "Binary file, cannot display"
+                }
+        else:
+            return {
+                "path": path,
+                "name": target.name,
+                "content": None,
+                "type": "binary",
+                "message": f"Binary file ({target.suffix})"
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/file")
+async def save_file(request: Request):
+    """Сохранить файл"""
+    try:
+        data = await request.json()
+        path = data.get("path", "")
+        content = data.get("content", "")
+        
+        target = safe_path(path)
+        
+        # Создаём родительские директории если нужно
+        target.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Сохраняем
+        target.write_text(content, encoding='utf-8')
+        
+        return {"status": "ok", "path": path, "size": len(content)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/folder")
+async def create_folder(request: Request):
+    """Создать папку"""
+    try:
+        data = await request.json()
+        path = data.get("path", "")
+        
+        target = safe_path(path)
+        target.mkdir(parents=True, exist_ok=True)
+        
+        return {"status": "ok", "path": path}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/file")
+async def delete_file(path: str, confirm: bool = False):
+    """Удалить файл или папку"""
+    if not confirm:
+        raise HTTPException(status_code=400, detail="Confirmation required (confirm=true)")
+    
+    try:
+        target = safe_path(path)
+        
+        if not target.exists():
+            raise HTTPException(status_code=404, detail="Path not found")
+        
+        if target.is_file():
+            target.unlink()
+        else:
+            # Удаляем только пустые папки для безопасности
+            if any(target.iterdir()):
+                raise HTTPException(status_code=400, detail="Folder not empty")
+            target.rmdir()
+        
+        return {"status": "ok", "deleted": path}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/files/open")
+async def open_file(path: str):
+    """Открыть/скачать файл"""
+    try:
+        target = safe_path(path)
+        
+        if not target.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        if not target.is_file():
+            raise HTTPException(status_code=400, detail="Not a file")
+        
+        return FileResponse(
+            path=target,
+            filename=target.name,
+            media_type='application/octet-stream'
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/files", response_class=HTMLResponse)
+async def files_page():
+    """Страница файлового менеджера"""
+    return await root()
 
 # ===== ЗАПУСК =====
 

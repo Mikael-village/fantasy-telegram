@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dashboard</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg: #1a1a1a;
+            --bg-secondary: #2a2a2a;
+            --bg-tertiary: #3a3a3a;
+            --text: #ffffff;
+            --text-secondary: #888888;
+            --accent: #007AFF;
+            --accent-light: #4da3ff;
+            --border: #404040;
+            --success: #34C759;
+            --danger: #FF3B30;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== TOP PANEL - 60px ===== */
+        .top-panel {
+            height: 60px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            flex-shrink: 0;
+        }
+
+        .top-date {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .status-indicators {
+            display: flex;
+            gap: 16px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+        }
+
+        .status-dot.online {
+            background: var(--success);
+        }
+
+        /* ===== MAIN AREA ===== */
+        .main-area {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
+            margin-bottom: 120px; /* Space for fixed bottom panel */
+        }
+
+        /* ===== SIDE PANELS ===== */
+        .side-panel {
+            width: 52px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 6px;
+            background: var(--bg-secondary);
+            flex-shrink: 0;
+        }
+
+        .side-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: var(--bg-tertiary);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 16px;
+        }
+
+        .side-btn:active {
+            transform: scale(0.92);
+            background: var(--accent);
+        }
+
+        /* ===== CENTER ZONE ===== */
+        .center-zone {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            background: var(--bg);
+            min-height: 0; /* Important for flex scroll */
+        }
+
+        /* Content views */
+        .content-view {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0; /* Important for flex scroll */
+        }
+
+        .content-view.active {
+            display: flex;
+        }
+
+        /* Empty center */
+        .empty-center {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* File Browser */
+        .browser-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .back-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text);
+        }
+
+        .back-btn:active {
+            background: var(--accent);
+        }
+
+        .current-path {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-list {
+            flex: 1 1 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 0;
+            max-height: 100%;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            gap: 14px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .file-item:active {
+            background: var(--bg-tertiary);
+        }
+
+        .file-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            background: var(--bg-tertiary);
+            flex-shrink: 0;
+        }
+
+        .file-icon.folder {
+            background: var(--accent);
+        }
+
+        .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            font-size: 15px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Iframe */
+        .iframe-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .iframe-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .iframe-title {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .iframe-content {
+            flex: 1;
+            border: none;
+            background: white;
+        }
+
+        /* Helper view */
+        .helper-view {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .helper-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        .helper-slots {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .slot-column {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slot {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            border: 1px dashed var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .helper-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .helper-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .helper-btn:active {
+            background: var(--accent);
+        }
+
+        .skills-section {
+            margin-top: 16px;
+        }
+
+        .skills-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .skill-item {
+            padding: 12px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .skill-item:active {
+            border-color: var(--accent);
+        }
+
+        /* Folder selector for Downloads view */
+        .folder-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .folder-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            border: none;
+            cursor: pointer;
+        }
+
+        .folder-tab.active {
+            color: var(--accent);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            flex-shrink: 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .breadcrumb:empty {
+            display: none;
+        }
+
+        .breadcrumb-item {
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            cursor: pointer;
+            background: var(--bg-tertiary);
+        }
+
+        .breadcrumb-item:active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .breadcrumb-item.current {
+            color: var(--accent);
+            background: transparent;
+            cursor: default;
+        }
+
+        .breadcrumb-sep {
+            color: var(--text-secondary);
+            font-size: 10px;
+        }
+
+        /* ===== BOTTOM PANEL - 120px (fixed) ===== */
+        .bottom-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 12px 8px;
+            z-index: 100;
+        }
+
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+        }
+
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            transition: all 0.15s;
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        .nav-btn.active {
+            color: var(--accent);
+        }
+
+        .nav-btn-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .nav-btn-label {
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        /* Center CRM button - larger */
+        .nav-btn.center {
+            background: var(--accent);
+            color: white;
+            padding: 12px 24px;
+            margin-bottom: 8px;
+        }
+
+        .nav-btn.center .nav-btn-icon {
+            font-size: 28px;
+        }
+
+        /* Messenger popup */
+        .messenger-popup {
+            display: none;
+            position: absolute;
+            bottom: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 12px;
+            z-index: 100;
+        }
+
+        .messenger-popup.active {
+            display: block;
+        }
+
+        .messenger-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .messenger-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background: var(--bg-tertiary);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 12px;
+        }
+
+        .messenger-btn:active {
+            background: var(--accent);
+        }
+
+        .messenger-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Overlay */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 99;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(26, 26, 26, 0.9);
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty state */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* Text Modal */
+        .text-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .text-modal-content {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .text-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .text-modal-header button {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+
+        .text-modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: monospace;
+            color: var(--text);
+            margin: 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Image in modal */
+        .text-modal-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        /* PDF iframe in modal */
+        .text-modal-body iframe {
+            width: 100%;
+            height: 60vh;
+            border: none;
+            border-radius: 8px;
+        }
+
+        /* File Actions Modal */
+        .file-actions-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 200;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .file-actions-content {
+            background: var(--bg-secondary);
+            border-radius: 16px 16px 0 0;
+            width: 100%;
+            max-width: 400px;
+            padding: 16px;
+        }
+
+        .file-actions-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .file-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-tertiary);
+            border: none;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            color: var(--text);
+            font-size: 15px;
+        }
+
+        .file-action-btn:active {
+            background: var(--accent);
+        }
+
+        .file-action-btn .icon {
+            font-size: 20px;
+        }
+
+        .file-action-cancel {
+            margin-top: 8px;
+            background: transparent;
+            color: var(--danger);
+        }
+
+        /* Clipboard indicator */
+        .clipboard-indicator {
+            position: fixed;
+            bottom: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 150;
+            display: none;
+        }
+
+        .clipboard-indicator.active {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Panel -->
+    <div class="top-panel">
+        <div class="top-date" id="currentDate"></div>
+        <div class="status-indicators">
+            <div class="status">
+                <div class="status-dot online" id="pcDot"></div>
+                <span>Сервер</span>
+            </div>
+            <div class="status">
+                <div class="status-dot online" id="aiDot"></div>
+                <span>Помощник</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Area -->
+    <div class="main-area">
+        <!-- Left Panel - Search services -->
+        <div class="side-panel">
+            <button class="side-btn" onclick="openService('https://brand-search.ru/', 'Поиск ТЗ', false)" title="brand-search.ru">🔍</button>
+            <button class="side-btn" onclick="openService('https://linkmark.ru/', 'Linkmark', true)" title="linkmark.ru">🔗</button>
+            <button class="side-btn" onclick="openService('https://www1.fips.ru/registers-web/action?acName=clickRegister&regName=RUTM', 'ФИПС ТЗ', false)" title="Реестр ТЗ">📋</button>
+            <button class="side-btn" onclick="openService('https://www1.fips.ru/registers-web/action?acName=clickRegister&regName=RUTMAP', 'ФИПС Заявки', false)" title="Реестр заявок">📝</button>
+            <button class="side-btn" onclick="openService('https://www.pochta.ru/tracking', 'Почта РФ', true)" title="Почта РФ">📦</button>
+        </div>
+
+        <!-- Center Zone -->
+        <div class="center-zone">
+            <!-- Empty state (default) -->
+            <div class="content-view active" id="emptyView">
+                <div class="empty-center">Выберите раздел</div>
+            </div>
+
+            <!-- File browser -->
+            <div class="content-view" id="fileBrowser">
+                <div class="browser-header">
+                    <button class="back-btn" onclick="goBack()">←</button>
+                    <div class="current-path" id="currentPath"></div>
+                </div>
+                <div class="breadcrumb" id="fileBreadcrumb"></div>
+                <div class="file-list" id="fileList"></div>
+            </div>
+
+            <!-- Downloads + Clients view -->
+            <div class="content-view" id="downloadsView">
+                <div class="folder-tabs">
+                    <button class="folder-tab active" id="tabDownloads" onclick="switchTab('Загрузки', this)">Загрузки</button>
+                    <button class="folder-tab" id="tabClients" onclick="switchTab('КЛИЕНТЫ', this)">Клиенты</button>
+                </div>
+                <div class="breadcrumb" id="downloadsBreadcrumb"></div>
+                <div class="file-list" id="downloadsFileList"></div>
+            </div>
+
+            <!-- CRM iframe -->
+            <div class="content-view" id="crmView">
+                <div class="iframe-view">
+                    <div class="iframe-header">
+                        <button class="back-btn" onclick="closeView()">←</button>
+                        <div class="iframe-title">CRM</div>
+                    </div>
+                    <iframe class="iframe-content" id="crmIframe" src="about:blank"></iframe>
+                </div>
+            </div>
+
+            <!-- Service iframe -->
+            <div class="content-view" id="serviceView">
+                <div class="iframe-view">
+                    <div class="iframe-header">
+                        <button class="back-btn" onclick="closeView()">←</button>
+                        <div class="iframe-title" id="serviceTitle"></div>
+                    </div>
+                    <iframe class="iframe-content" id="serviceIframe" src="about:blank"></iframe>
+                </div>
+            </div>
+
+            <!-- Helper view -->
+            <div class="content-view" id="helperView">
+                <div class="helper-view">
+                    <div class="helper-avatar">🤖</div>
+                    
+                    <div class="helper-slots">
+                        <div class="slot-column">
+                            <div class="slot">1</div>
+                            <div class="slot">2</div>
+                            <div class="slot">3</div>
+                        </div>
+                        <div style="width: 60px;"></div>
+                        <div class="slot-column">
+                            <div class="slot">4</div>
+                            <div class="slot">5</div>
+                            <div class="slot">6</div>
+                        </div>
+                    </div>
+
+                    <div class="helper-buttons">
+                        <button class="helper-btn" onclick="showFile('USER.md')">📜 Правила</button>
+                        <button class="helper-btn" onclick="showFile('AGENTS.md')">📖 Руководства</button>
+                    </div>
+
+                    <div class="skills-section">
+                        <div class="skills-title">Скиллы</div>
+                        <div class="skills-grid" id="skillsGrid">
+                            <div class="skill-item" style="color: var(--text-secondary)">Загрузка...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Additional services -->
+        <div class="side-panel">
+            <button class="side-btn" onclick="openService('https://www1.fips.ru/registers-web/', 'ФИПС', false)" title="Все реестры">🏛️</button>
+            <button class="side-btn" onclick="alert('В разработке')" title="Избранное">⭐</button>
+            <button class="side-btn" onclick="alert('В разработке')" title="Недавние">🕐</button>
+            <button class="side-btn" onclick="alert('В разработке')" title="Поиск">🔎</button>
+            <button class="side-btn" onclick="alert('В разработке')" title="Настройки">⚙️</button>
+        </div>
+    </div>
+
+    <!-- File Actions Modal -->
+    <div class="file-actions-modal" id="fileActionsModal" style="display:none" onclick="closeFileActions(event)">
+        <div class="file-actions-content" onclick="event.stopPropagation()">
+            <div class="file-actions-title" id="fileActionsTitle">file.txt</div>
+            <button class="file-action-btn" onclick="fileActionOpen()">
+                <span class="icon">👁️</span> Открыть
+            </button>
+            <button class="file-action-btn" onclick="fileActionCopy()">
+                <span class="icon">📋</span> Копировать
+            </button>
+            <button class="file-action-btn" onclick="fileActionDownload()">
+                <span class="icon">📥</span> Скачать
+            </button>
+            <button class="file-action-btn file-action-cancel" onclick="closeFileActions()">
+                Отмена
+            </button>
+        </div>
+    </div>
+
+    <!-- Clipboard indicator -->
+    <div class="clipboard-indicator" id="clipboardIndicator">
+        <span>📋</span>
+        <span id="clipboardFileName">Файл скопирован</span>
+        <button onclick="clearClipboard()" style="background:none;border:none;color:white;font-size:16px;cursor:pointer">✕</button>
+    </div>
+
+    <!-- Messenger popup -->
+    <div class="overlay" id="overlay" onclick="closeMessengerPopup()"></div>
+    <div class="messenger-popup" id="messengerPopup">
+        <div class="messenger-grid">
+            <!-- Left top: Mail, Right top: MAX -->
+            <!-- Left bottom: WhatsApp, Right bottom: Telegram -->
+            <button class="messenger-btn" onclick="openMessenger('Mail')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Mail_%28iOS%29.svg" alt="Mail">
+            </button>
+            <button class="messenger-btn" onclick="openMessenger('MAX')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/2/21/VK.com-logo.svg" alt="MAX">
+            </button>
+            <button class="messenger-btn" onclick="openMessenger('WhatsApp')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+            </button>
+            <button class="messenger-btn" onclick="openMessenger('Telegram')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram">
+            </button>
+        </div>
+    </div>
+
+    <!-- Bottom Panel -->
+    <div class="bottom-panel">
+        <div class="bottom-nav">
+            <button class="nav-btn" onclick="openArchive()">
+                <span class="nav-btn-icon">🗄️</span>
+                <span class="nav-btn-label">Архив</span>
+            </button>
+            <button class="nav-btn" onclick="toggleMessengerPopup()">
+                <span class="nav-btn-icon">💬</span>
+                <span class="nav-btn-label">Мессенджеры</span>
+            </button>
+            <button class="nav-btn center" onclick="openCRM()">
+                <span class="nav-btn-icon">📊</span>
+                <span class="nav-btn-label">CRM</span>
+            </button>
+            <button class="nav-btn" onclick="openHelper()">
+                <span class="nav-btn-icon">🤖</span>
+                <span class="nav-btn-label">Помощник</span>
+            </button>
+            <button class="nav-btn" onclick="openDownloads()">
+                <span class="nav-btn-icon">📥</span>
+                <span class="nav-btn-label">Загрузки</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let currentPath = '';
+        let pathHistory = [];
+        let currentRootPath = '';
+        let openedWindows = {};
+        
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        const messengerLinks = {
+            'Telegram': { web: 'https://web.telegram.org/', app: 'tg://resolve' },
+            'MAX': { web: 'https://web.max.ru/', app: null },
+            'WhatsApp': { web: 'https://web.whatsapp.com/', app: 'whatsapp://send' },
+            'Mail': { web: 'https://e.mail.ru/inbox/', app: 'mailto:' }
+        };
+
+        // ===== INIT =====
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDate();
+            setInterval(updateDate, 60000);
+            
+            if (window.Telegram?.WebApp) {
+                Telegram.WebApp.ready();
+                Telegram.WebApp.expand();
+            }
+        });
+
+        function updateDate() {
+            const now = new Date();
+            const options = { day: 'numeric', month: 'long', year: 'numeric' };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('ru-RU', options);
+        }
+
+        // ===== VIEW MANAGEMENT =====
+        function showView(viewId) {
+            document.querySelectorAll('.content-view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+        }
+
+        function closeView() {
+            showView('emptyView');
+            // CRM iframe не сбрасываем — сохраняем сессию
+            document.getElementById('serviceIframe').src = 'about:blank';
+        }
+
+        // ===== BOTTOM NAV ACTIONS =====
+        function openArchive() {
+            currentRootPath = 'АРХИВ';
+            openFolder('АРХИВ');
+        }
+
+        function openDownloads() {
+            showView('downloadsView');
+            loadDownloadsTab('Загрузки');
+        }
+
+        function openCRM() {
+            showView('crmView');
+            document.getElementById('crmIframe').src = 'https://crm.rko.center/leads';
+        }
+
+        function openHelper() {
+            showView('helperView');
+            loadSkills();
+        }
+
+        // ===== MESSENGER POPUP =====
+        function toggleMessengerPopup() {
+            const popup = document.getElementById('messengerPopup');
+            const overlay = document.getElementById('overlay');
+            popup.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        function closeMessengerPopup() {
+            document.getElementById('messengerPopup').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
+        }
+
+        function openMessenger(name) {
+            closeMessengerPopup();
+            const links = messengerLinks[name];
+            if (!links) return;
+            
+            if (isMobile && links.app) {
+                window.location.href = links.app;
+            } else {
+                window.open(links.web, '_blank');
+            }
+        }
+
+        // ===== SERVICES =====
+        function openService(url, name, canIframe) {
+            if (canIframe && !isMobile) {
+                showView('serviceView');
+                document.getElementById('serviceTitle').textContent = name;
+                document.getElementById('serviceIframe').src = url;
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+
+        // ===== FILE BROWSER =====
+        let archiveRootPath = 'АРХИВ';
+
+        async function openFolder(path) {
+            showLoading(true);
+            currentPath = path;
+            pathHistory.push(path);
+
+            try {
+                const response = await fetch(`${API_BASE}/api/pc/files?path=${encodeURIComponent(path)}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    alert(data.pc_online === false ? 'ПК не подключён' : 'Ошибка: ' + data.error);
+                    showLoading(false);
+                    return;
+                }
+
+                renderFiles(data.items || [], 'fileList');
+                document.getElementById('currentPath').textContent = path.split('/').pop() || path;
+                updateFileBreadcrumb();
+                showView('fileBrowser');
+            } catch (e) {
+                alert('Ошибка: ' + e.message);
+            }
+
+            showLoading(false);
+        }
+
+        function updateFileBreadcrumb() {
+            const bc = document.getElementById('fileBreadcrumb');
+            const relativePath = currentPath.replace(archiveRootPath, '').replace(/^\//, '');
+            
+            if (!relativePath) {
+                bc.innerHTML = '';
+                return;
+            }
+
+            const parts = relativePath.split('/').filter(p => p);
+            let html = `<span class="breadcrumb-item" onclick="openFolder('${archiveRootPath}')">🗄️ Архив</span>`;
+            
+            let buildPath = archiveRootPath;
+            parts.forEach((part, i) => {
+                buildPath += '/' + part;
+                const isLast = i === parts.length - 1;
+                html += `<span class="breadcrumb-sep">›</span>`;
+                if (isLast) {
+                    html += `<span class="breadcrumb-item current">${part}</span>`;
+                } else {
+                    html += `<span class="breadcrumb-item" onclick="openFolder('${buildPath}')">${part}</span>`;
+                }
+            });
+
+            bc.innerHTML = html;
+        }
+
+        function goBack() {
+            pathHistory.pop();
+            if (pathHistory.length > 0) {
+                const prev = pathHistory.pop();
+                openFolder(prev);
+            } else {
+                closeView();
+            }
+        }
+
+        // ===== DOWNLOADS TAB =====
+        let downloadsCurrentPath = '';
+        let downloadsRootPath = '';
+
+        function switchTab(folder, btn) {
+            document.querySelectorAll('.folder-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            downloadsRootPath = folder;
+            loadDownloadsFolder(folder);
+        }
+
+        async function loadDownloadsFolder(folder) {
+            showLoading(true);
+            downloadsCurrentPath = folder;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/pc/files?path=${encodeURIComponent(folder)}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    document.getElementById('downloadsFileList').innerHTML = 
+                        `<div class="empty-state"><span class="empty-state-icon">⚠️</span><span>${data.error}</span></div>`;
+                } else {
+                    renderDownloadsFiles(data.items || []);
+                    updateBreadcrumb();
+                }
+            } catch (e) {
+                document.getElementById('downloadsFileList').innerHTML = 
+                    `<div class="empty-state"><span class="empty-state-icon">⚠️</span><span>${e.message}</span></div>`;
+            }
+
+            showLoading(false);
+        }
+
+        function renderDownloadsFiles(items) {
+            const list = document.getElementById('downloadsFileList');
+            list.innerHTML = '';
+
+            if (items.length === 0) {
+                list.innerHTML = '<div class="empty-state"><span class="empty-state-icon">📭</span><span>Пусто</span></div>';
+                return;
+            }
+
+            items.forEach(file => {
+                const isFolder = file.type === 'folder';
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.onclick = () => {
+                    if (isFolder) {
+                        loadDownloadsFolder(downloadsCurrentPath + '/' + file.name);
+                    } else {
+                        showFileActions(downloadsCurrentPath + '/' + file.name, file.name);
+                    }
+                };
+
+                item.innerHTML = `
+                    <div class="file-icon ${isFolder ? 'folder' : ''}">${isFolder ? '📁' : getFileIcon(file.name)}</div>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-meta">${isFolder ? 'Папка' : formatSize(file.size || 0)}</div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function updateBreadcrumb() {
+            const bc = document.getElementById('downloadsBreadcrumb');
+            
+            // Разбиваем путь относительно корня
+            const relativePath = downloadsCurrentPath.replace(downloadsRootPath, '').replace(/^\//, '');
+            
+            if (!relativePath) {
+                bc.innerHTML = '';
+                return;
+            }
+
+            const parts = relativePath.split('/').filter(p => p);
+            let html = `<span class="breadcrumb-item" onclick="loadDownloadsFolder('${downloadsRootPath}')">${downloadsRootPath === 'Загрузки' ? '📥' : '👥'} Корень</span>`;
+            
+            let buildPath = downloadsRootPath;
+            parts.forEach((part, i) => {
+                buildPath += '/' + part;
+                const isLast = i === parts.length - 1;
+                html += `<span class="breadcrumb-sep">›</span>`;
+                if (isLast) {
+                    html += `<span class="breadcrumb-item current">${part}</span>`;
+                } else {
+                    html += `<span class="breadcrumb-item" onclick="loadDownloadsFolder('${buildPath}')">${part}</span>`;
+                }
+            });
+
+            bc.innerHTML = html;
+        }
+
+        async function loadDownloadsTab(folder) {
+            downloadsRootPath = folder;
+            loadDownloadsFolder(folder);
+        }
+
+        function renderFiles(items, listId, basePath = currentPath) {
+            const list = document.getElementById(listId);
+            list.innerHTML = '';
+
+            if (items.length === 0) {
+                list.innerHTML = '<div class="empty-state"><span class="empty-state-icon">📭</span><span>Пусто</span></div>';
+                return;
+            }
+
+            items.forEach(file => {
+                const isFolder = file.type === 'folder';
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.onclick = () => {
+                    if (isFolder) {
+                        openFolder(basePath + '/' + file.name);
+                    } else {
+                        showFileActions(basePath + '/' + file.name, file.name);
+                    }
+                };
+
+                item.innerHTML = `
+                    <div class="file-icon ${isFolder ? 'folder' : ''}">${isFolder ? '📁' : getFileIcon(file.name)}</div>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-meta">${isFolder ? 'Папка' : formatSize(file.size || 0)}</div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // ===== HELPER =====
+        async function showFile(filename) {
+            showLoading(true);
+            try {
+                // Путь к файлам в Jarvis.Dom
+                const basePath = 'Jarvis.Mir/Jarvis.Dom';
+                const response = await fetch(`${API_BASE}/api/pc/file?path=${encodeURIComponent(basePath + '/' + filename)}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert('Ошибка: ' + data.error);
+                } else if (data.content) {
+                    showTextContent(filename, data.content);
+                } else {
+                    alert('Файл пуст или не найден');
+                }
+            } catch (e) {
+                alert('Ошибка: ' + e.message);
+            }
+            showLoading(false);
+        }
+
+        function showTextContent(title, content) {
+            // Показываем в модальном окне
+            const modal = document.createElement('div');
+            modal.className = 'text-modal';
+            modal.innerHTML = `
+                <div class="text-modal-content">
+                    <div class="text-modal-header">
+                        <span>${title}</span>
+                        <button onclick="this.closest('.text-modal').remove()">✕</button>
+                    </div>
+                    <pre class="text-modal-body">${escapeHtml(content)}</pre>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function loadSkills() {
+            try {
+                const response = await fetch(`${API_BASE}/api/pc/files?path=Jarvis.Mir/Jarvis.Dom/skills`);
+                const data = await response.json();
+                
+                if (data.items) {
+                    const grid = document.getElementById('skillsGrid');
+                    grid.innerHTML = '';
+                    
+                    data.items.filter(item => item.type === 'folder').forEach(skill => {
+                        const div = document.createElement('div');
+                        div.className = 'skill-item';
+                        div.textContent = skill.name;
+                        div.onclick = () => openSkill(skill.name);
+                        grid.appendChild(div);
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to load skills:', e);
+            }
+        }
+
+        async function openSkill(skillName) {
+            showLoading(true);
+            try {
+                const response = await fetch(`${API_BASE}/api/pc/file?path=${encodeURIComponent('Jarvis.Mir/Jarvis.Dom/skills/' + skillName + '/SKILL.md')}`);
+                const data = await response.json();
+                
+                if (data.content) {
+                    showTextContent(skillName + '/SKILL.md', data.content);
+                } else {
+                    alert('SKILL.md не найден');
+                }
+            } catch (e) {
+                alert('Ошибка: ' + e.message);
+            }
+            showLoading(false);
+        }
+
+        function showSkillGroup(group) {
+            alert(`Группа скиллов: ${group}\n(В разработке)`);
+        }
+
+        // ===== FILE ACTIONS =====
+        let selectedFile = null;
+        let clipboardFile = null;
+
+        function showFileActions(path, filename) {
+            selectedFile = { path, filename };
+            document.getElementById('fileActionsTitle').textContent = filename;
+            document.getElementById('fileActionsModal').style.display = 'flex';
+        }
+
+        function closeFileActions(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('fileActionsModal').style.display = 'none';
+            selectedFile = null;
+        }
+
+        async function fileActionOpen() {
+            const file = selectedFile; // Сохраняем до закрытия
+            closeFileActions();
+            if (!file) {
+                alert('Файл не выбран');
+                return;
+            }
+            
+            const ext = file.filename.split('.').pop().toLowerCase();
+            const textExts = ['txt', 'md', 'json', 'js', 'py', 'html', 'css', 'xml', 'yaml', 'yml', 'log', 'bat', 'sh', 'ini', 'cfg', 'env', 'gitignore', 'docx', 'odt', 'doc'];
+            const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+            
+            showLoading(true);
+            
+            try {
+                if (textExts.includes(ext) || file.filename.startsWith('.')) {
+                    // Текстовый файл - читаем и показываем
+                    const url = `${API_BASE}/api/pc/file?path=${encodeURIComponent(file.path)}`;
+                    console.log('Fetching:', url);
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    console.log('Response:', data);
+                    
+                    if (data.content) {
+                        showTextContent(file.filename, data.content);
+                    } else if (data.error) {
+                        alert('Ошибка: ' + data.error);
+                    } else {
+                        alert('Файл пуст или не удалось прочитать');
+                    }
+                } else if (imageExts.includes(ext)) {
+                    // Изображение - загружаем и показываем
+                    const url = `${API_BASE}/api/pc/file/download?path=${encodeURIComponent(file.path)}`;
+                    showImagePreview(file.filename, url);
+                } else if (ext === 'pdf') {
+                    // PDF - показываем в iframe
+                    const url = `${API_BASE}/api/pc/file/download?path=${encodeURIComponent(file.path)}`;
+                    showPdfPreview(file.filename, url);
+                } else {
+                    // Остальные - скачиваем
+                    alert('Формат ' + ext + ' не поддерживается для просмотра. Скачиваю...');
+                    downloadFile(file.path, file.filename);
+                }
+            } catch (e) {
+                console.error('Error:', e);
+                alert('Ошибка: ' + e.message);
+            }
+            
+            showLoading(false);
+        }
+
+        function fileActionCopy() {
+            const file = selectedFile;
+            closeFileActions();
+            if (!file) return;
+            
+            clipboardFile = { ...file };
+            document.getElementById('clipboardFileName').textContent = file.filename;
+            document.getElementById('clipboardIndicator').classList.add('active');
+        }
+
+        function clearClipboard() {
+            clipboardFile = null;
+            document.getElementById('clipboardIndicator').classList.remove('active');
+        }
+
+        function fileActionDownload() {
+            const file = selectedFile;
+            closeFileActions();
+            if (!file) return;
+            downloadFile(file.path, file.filename);
+        }
+
+        function downloadFile(path, filename) {
+            const url = `${API_BASE}/api/pc/file/download?path=${encodeURIComponent(path)}`;
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function showImagePreview(title, url) {
+            const modal = document.createElement('div');
+            modal.className = 'text-modal';
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            modal.innerHTML = `
+                <div class="text-modal-content">
+                    <div class="text-modal-header">
+                        <span>${title}</span>
+                        <button onclick="this.closest('.text-modal').remove()">✕</button>
+                    </div>
+                    <div class="text-modal-body" style="text-align:center;padding:8px;">
+                        <img src="${url}" alt="${title}" style="max-height:70vh;">
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function showPdfPreview(title, url) {
+            const modal = document.createElement('div');
+            modal.className = 'text-modal';
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            modal.innerHTML = `
+                <div class="text-modal-content" style="max-width:90%;height:85vh;">
+                    <div class="text-modal-header">
+                        <span>${title}</span>
+                        <button onclick="this.closest('.text-modal').remove()">✕</button>
+                    </div>
+                    <div class="text-modal-body" style="padding:0;flex:1;">
+                        <iframe src="${url}" style="width:100%;height:100%;"></iframe>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // ===== HELPERS =====
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('active', show);
+        }
+
+        function getFileIcon(name) {
+            const ext = name.split('.').pop().toLowerCase();
+            const icons = {
+                pdf: '📕', doc: '📄', docx: '📄', xls: '📊', xlsx: '📊',
+                jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️',
+                zip: '📦', rar: '📦', mp3: '🎵', mp4: '🎬', txt: '📝'
+            };
+            return icons[ext] || '📄';
+        }
+
+        function formatSize(bytes) {
+            if (!bytes) return '';
+            const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
