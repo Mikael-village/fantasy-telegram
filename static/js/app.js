@@ -374,6 +374,121 @@ function showTextContent(title, content) {
     document.body.appendChild(modal);
 }
 
+// ===== RULES MODAL (USER.md) =====
+async function showRulesModal() {
+    showLoading(true);
+    try {
+        const basePath = 'Jarvis.Mir/Jarvis.Dom';
+        const response = await fetch(`${API_BASE}/api/pc/file?path=${encodeURIComponent(basePath + '/USER.md')}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            alert('Ошибка: ' + data.error);
+            showLoading(false);
+            return;
+        }
+        
+        const rules = parseRulesFromMd(data.content || '');
+        showRulesContent(rules);
+    } catch (e) {
+        alert('Ошибка: ' + e.message);
+    }
+    showLoading(false);
+}
+
+function parseRulesFromMd(content) {
+    const rules = [];
+    const lines = content.split('\n');
+    let inRulesSection = false;
+    let currentRule = null;
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        
+        // Начало раздела правил
+        if (line.includes('ЖЕЛЕЗНЫЕ ПРАВИЛА') || line.includes('🚨')) {
+            inRulesSection = true;
+            continue;
+        }
+        
+        // Конец раздела (следующий раздел верхнего уровня или конец файла)
+        if (inRulesSection && line.match(/^##\s+[^#]/) && !line.includes('🔒') && !line.includes('🛡️')) {
+            break;
+        }
+        
+        if (!inRulesSection) continue;
+        
+        // Новое правило (### 🔒 или ### 🛡️)
+        if (line.match(/^###\s+🔒/) || line.match(/^###\s+🛡️/)) {
+            if (currentRule) rules.push(currentRule);
+            const title = line.replace(/^###\s+/, '').replace(/🔒|🛡️/g, '').trim();
+            const icon = line.includes('🛡️') ? '🛡️' : '🔒';
+            currentRule = { icon, title, description: [] };
+            continue;
+        }
+        
+        // Содержимое правила
+        if (currentRule && line.trim()) {
+            // Пропускаем технические строки
+            if (line.startsWith('**Порядок:') || line.startsWith('Иначе =')) {
+                const cleanLine = line
+                    .replace(/\*\*/g, '')
+                    .replace(/→/g, '→')
+                    .trim();
+                currentRule.description.push(cleanLine);
+            } else if (line.startsWith('**') || line.startsWith('НИКОГДА') || line.startsWith('При ') || line.startsWith('После ') || line.startsWith('Перед ')) {
+                const cleanLine = line
+                    .replace(/\*\*/g, '')
+                    .replace(/⛔/g, '')
+                    .trim();
+                if (cleanLine && !cleanLine.startsWith('---') && !cleanLine.startsWith('```')) {
+                    currentRule.description.push(cleanLine);
+                }
+            }
+        }
+    }
+    
+    if (currentRule) rules.push(currentRule);
+    return rules;
+}
+
+function showRulesContent(rules) {
+    const modal = document.createElement('div');
+    modal.className = 'text-modal';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    let rulesHtml = '';
+    rules.forEach(rule => {
+        rulesHtml += `
+            <div class="rule-item">
+                <div class="rule-header">
+                    <span class="rule-icon">${rule.icon}</span>
+                    <span class="rule-title">${escapeHtml(rule.title)}</span>
+                </div>
+                <div class="rule-description">
+                    ${rule.description.map(d => `<p>${escapeHtml(d)}</p>`).join('')}
+                </div>
+            </div>
+        `;
+    });
+    
+    modal.innerHTML = `
+        <div class="text-modal-content rules-modal">
+            <div class="text-modal-header">
+                <span>📜 Правила</span>
+                <div class="header-actions">
+                    <button class="open-file-btn" onclick="showFile('USER.md')">📄 Файл</button>
+                    <button onclick="this.closest('.text-modal').remove()">✕</button>
+                </div>
+            </div>
+            <div class="rules-list">
+                ${rulesHtml || '<p style="color: var(--text-secondary); text-align: center;">Правила не найдены</p>'}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
