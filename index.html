@@ -91,9 +91,11 @@
                                 onmouseup="endVoiceRecord(event)">
                                 <span id="voiceIcon">🎤</span>
                             </button>
-                            <div class="voice-slide-hint" id="voiceSlideHint">↑ Отпусти для отмены</div>
+                            <div class="voice-slide-hint" id="voiceSlideHint">
+                                <span>⬆️</span> Свайп вверх — зафиксировать
+                            </div>
                             <div class="voice-locked-indicator" id="voiceLockedIndicator">
-                                <span>🔒 Запись</span>
+                                <span>🎙️</span>
                                 <button class="voice-send-btn" onclick="sendVoiceMessage()">Отправить</button>
                                 <button class="voice-cancel-btn" onclick="cancelVoiceRecord()">✕</button>
                             </div>

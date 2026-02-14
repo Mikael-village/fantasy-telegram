@@ -116,6 +116,12 @@ body {
     background: var(--accent);
 }
 
+.side-btn img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
 /* ===== CENTER ZONE ===== */
 .center-zone {
     flex: 1;
@@ -984,71 +990,53 @@ body {
     align-items: center;
 }
 
-.voice-slide-hint {
-    display: none;
-    position: absolute;
-    bottom: 60px;
-    right: 0;
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
-    padding: 8px 16px;
-    border-radius: 16px;
-    font-size: 12px;
-    white-space: nowrap;
-    animation: slideHintPulse 1s infinite;
-}
-
-@keyframes slideHintPulse {
-    0%, 100% { opacity: 0.7; }
-    50% { opacity: 1; }
-}
-
-.voice-container.recording .voice-slide-hint {
-    display: block;
-}
-
+.voice-slide-hint,
 .voice-locked-indicator {
     display: none;
     position: absolute;
-    bottom: 60px;
+    bottom: 56px;
     right: 0;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 8px 14px;
     border-radius: 12px;
-    gap: 8px;
-    align-items: center;
+    font-size: 13px;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
-.voice-container.locked .voice-locked-indicator {
+.voice-container.recording .voice-slide-hint {
     display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .voice-container.locked .voice-slide-hint {
     display: none;
 }
 
-.voice-container.locked .voice-btn {
-    background: var(--danger);
+.voice-container.locked .voice-locked-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .voice-send-btn {
     background: var(--success);
     color: white;
     border: none;
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 500;
 }
 
 .voice-cancel-btn {
-    background: var(--danger);
-    color: white;
+    background: transparent;
+    color: var(--danger);
     border: none;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
+    font-size: 18px;
     cursor: pointer;
-    font-size: 12px;
+    padding: 0 4px;
 }
