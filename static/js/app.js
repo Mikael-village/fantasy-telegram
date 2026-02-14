@@ -489,6 +489,115 @@ function showRulesContent(rules) {
     document.body.appendChild(modal);
 }
 
+// ===== GUIDES MODAL (AGENTS.md) =====
+async function showGuidesModal() {
+    showLoading(true);
+    try {
+        const basePath = 'Jarvis.Mir/Jarvis.Dom';
+        const response = await fetch(`${API_BASE}/api/pc/file?path=${encodeURIComponent(basePath + '/AGENTS.md')}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            alert('Ошибка: ' + data.error);
+            showLoading(false);
+            return;
+        }
+        
+        const sections = parseGuidesFromMd(data.content || '');
+        showGuidesContent(sections);
+    } catch (e) {
+        alert('Ошибка: ' + e.message);
+    }
+    showLoading(false);
+}
+
+function parseGuidesFromMd(content) {
+    const sections = [];
+    const lines = content.split('\n');
+    let currentSection = null;
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        
+        // Новый раздел (## заголовок)
+        if (line.match(/^##\s+/)) {
+            if (currentSection) sections.push(currentSection);
+            
+            let title = line.replace(/^##\s+/, '').trim();
+            let icon = '📌';
+            
+            // Извлекаем эмодзи если есть
+            const emojiMatch = title.match(/^([\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}])/u);
+            if (emojiMatch) {
+                icon = emojiMatch[1];
+                title = title.replace(icon, '').trim();
+            }
+            
+            currentSection = { icon, title, content: [] };
+            continue;
+        }
+        
+        // Содержимое раздела
+        if (currentSection && line.trim()) {
+            // Пропускаем таблицы и код
+            if (line.startsWith('|') || line.startsWith('```')) continue;
+            
+            // Очищаем markdown
+            let cleanLine = line
+                .replace(/^\s*[-*]\s*/, '• ')  // списки
+                .replace(/`([^`]+)`/g, '$1')   // код
+                .replace(/\*\*([^*]+)\*\*/g, '$1')  // жирный
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // ссылки
+                .replace(/→/g, '→')
+                .trim();
+            
+            if (cleanLine && !cleanLine.startsWith('#')) {
+                currentSection.content.push(cleanLine);
+            }
+        }
+    }
+    
+    if (currentSection) sections.push(currentSection);
+    return sections;
+}
+
+function showGuidesContent(sections) {
+    const modal = document.createElement('div');
+    modal.className = 'text-modal';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    let sectionsHtml = '';
+    sections.forEach(section => {
+        sectionsHtml += `
+            <div class="guide-item">
+                <div class="guide-header">
+                    <span class="guide-icon">${section.icon}</span>
+                    <span class="guide-title">${escapeHtml(section.title)}</span>
+                </div>
+                <div class="guide-content">
+                    ${section.content.map(c => `<p>${escapeHtml(c)}</p>`).join('')}
+                </div>
+            </div>
+        `;
+    });
+    
+    modal.innerHTML = `
+        <div class="text-modal-content rules-modal">
+            <div class="text-modal-header">
+                <span>📖 Руководства</span>
+                <div class="header-actions">
+                    <button class="open-file-btn" onclick="showFile('AGENTS.md')">📄 Файл</button>
+                    <button onclick="this.closest('.text-modal').remove()">✕</button>
+                </div>
+            </div>
+            <div class="rules-list">
+                ${sectionsHtml || '<p style="color: var(--text-secondary); text-align: center;">Руководства не найдены</p>'}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;

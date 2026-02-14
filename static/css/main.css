@@ -851,6 +851,49 @@ body {
     margin-bottom: 0;
 }
 
+/* Guides (same style as rules) */
+.guide-item {
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.guide-item:last-child {
+    margin-bottom: 0;
+}
+
+.guide-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.guide-icon {
+    font-size: 18px;
+}
+
+.guide-title {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text);
+}
+
+.guide-content {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.guide-content p {
+    margin: 0 0 6px 0;
+}
+
+.guide-content p:last-child {
+    margin-bottom: 0;
+}
+
 /* Image in modal */
 .text-modal-body img {
     max-width: 100%;
