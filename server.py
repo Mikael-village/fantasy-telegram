@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 import httpx
+from skills_parser import parse_registry_md
 
 # Конфигурация
 API_SECRET = os.getenv('API_SECRET', 'fantasy-secret-2026')
@@ -324,6 +325,28 @@ async def ai_ping():
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
+# Clawdbot API через Tailscale
+CLAWDBOT_API_URL = "https://desktop-a857bb7.tail58eca6.ts.net/v1/chat/completions"
+
+@app.post("/api/ai/chat")
+async def ai_chat(request: Request):
+    """Прокси для Clawdbot API (через Tailscale)"""
+    try:
+        data = await request.json()
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                CLAWDBOT_API_URL,
+                json=data,
+                headers={"Content-Type": "application/json"}
+            )
+            return response.json()
+    except httpx.TimeoutException:
+        return {"error": {"message": "AI не отвечает (timeout)", "type": "timeout"}}
+    except httpx.ConnectError:
+        return {"error": {"message": "Нет связи с AI (PC offline?)", "type": "connection_error"}}
+    except Exception as e:
+        return {"error": {"message": str(e), "type": "server_error"}}
+
 @app.get("/api/chat/history")
 async def get_chat_history(limit: int = 50):
     """Получить историю чата"""
@@ -524,6 +547,26 @@ async def pc_download_file(path: str):
         media_type="application/octet-stream",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
+
+# ===== SKILLS API (из _REGISTRY.md) =====
+
+@app.get("/api/skills")
+async def get_skills():
+    """Получить список скиллов из _REGISTRY.md через PC Bridge"""
+    try:
+        # Читаем _REGISTRY.md с ПК
+        result = await pc_bridge.request("read", "Jarvis.Mir/Jarvis.Dom/skills/_REGISTRY.md")
+        
+        if result.get("error"):
+            # Если PC Bridge недоступен, вернуть кэш или пустой ответ
+            return {"categories": {}, "error": "PC Bridge unavailable"}
+        
+        content = result.get("content", "")
+        categories = parse_registry_md(content)
+        
+        return {"categories": categories}
+    except Exception as e:
+        return {"categories": {}, "error": str(e)}
 
 # ===== ФАЙЛОВЫЙ МЕНЕДЖЕР (локальный, для VPS) =====
 

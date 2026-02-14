@@ -347,68 +347,51 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Skills catalog
-const skillsCatalog = {
-    '📋 Документы': [
-        { id: 'new-contract', name: 'Новый договор', emoji: '📝', triggers: 'новый договор, подготовь договор' },
-        { id: 'contracts-brandonline', name: 'Система договоров', emoji: '📑', triggers: 'договор РТЗ, договор на лого, КП' },
-    ],
-    '💼 CRM': [
-        { id: 'bitrix-assistant', name: 'Битрикс CRM', emoji: '🔶', triggers: 'битрикс, дела, компании' },
-        { id: 'mcrm', name: 'MCRM (новая)', emoji: '📊', triggers: 'MCRM, миграция' },
-    ],
-    '💬 Мессенджеры': [
-        { id: 'messenger-telegram', name: 'Телеграм', emoji: '✈️', triggers: 'напиши в телеграм' },
-        { id: 'messenger-whatsapp', name: 'WhatsApp', emoji: '💚', triggers: 'напиши в whatsapp' },
-        { id: 'messenger-max', name: 'MAX (VK)', emoji: '💙', triggers: 'напиши в max' },
-    ],
-    '🏛️ Роспатент': [
-        { id: 'fips-expertise', name: 'Экспертиза ФИПС', emoji: '📋', triggers: 'ответ на уведомление, основание отказа' },
-        { id: 'fips-monitor', name: 'Мониторинг заявок', emoji: '👁️', triggers: 'проверить заявку, статус' },
-    ],
-    '🔧 Автоматизация': [
-        { id: 'desktop-control', name: 'Управление ПК', emoji: '🖥️', triggers: 'кликни, нажми, введи' },
-        { id: 'macro-recorder', name: 'Запись макросов', emoji: '⏺️', triggers: 'запиши макрос' },
-        { id: 'windows-apps', name: 'Приложения Windows', emoji: '🪟', triggers: 'создай программу' },
-    ],
-    '🔍 Исследование': [
-        { id: 'site-research', name: 'Изучение сайта', emoji: '🌐', triggers: 'изучи сайт' },
-        { id: 'service-onboarding', name: 'Онбординг сервиса', emoji: '🎓', triggers: 'изучи сервис, разберись' },
-    ],
-    '⚙️ Система': [
-        { id: 'system-architecture', name: 'Архитектура правил', emoji: '🏗️', triggers: 'зафиксируй, запомни' },
-        { id: 'skill-creator', name: 'Создание скиллов', emoji: '✨', triggers: 'создай скилл' },
-        { id: 'self-improvement', name: 'Самоулучшение', emoji: '📈', triggers: 'после ошибки, рефлексия' },
-        { id: 'execution-discipline', name: 'Дисциплина выполнения', emoji: '✅', triggers: 'сложная задача' },
-        { id: 'context-save', name: 'Сохранение контекста', emoji: '💾', triggers: 'сохранить контекст' },
-        { id: 'workspace-structure', name: 'Структура папок', emoji: '📁', triggers: 'найди файл, где лежит' },
-    ],
-    '🖥️ Инфраструктура': [
-        { id: 'firstvds', name: 'VPS сервер', emoji: '🖧', triggers: 'деплой на VPS, FirstVDS' },
-        { id: 'fantasy-dashboard', name: 'Fantasy Dashboard', emoji: '🎮', triggers: 'fantasy, фэнтези' },
-    ],
-};
-
+// Skills - загружаются с API из _REGISTRY.md
+let skillsCatalog = {};
 let allSkills = [];
 
 async function loadSkills() {
     const container = document.getElementById('skillsCategories');
-    container.innerHTML = '';
+    container.innerHTML = '<div class="loading-skills">Загрузка скиллов...</div>';
     allSkills = [];
 
-    Object.entries(skillsCatalog).forEach(([category, skills]) => {
+    try {
+        const response = await fetch(`${API_BASE}/api/skills`);
+        const data = await response.json();
+        
+        if (data.error) {
+            container.innerHTML = `<div class="error-state">⚠️ ${data.error}</div>`;
+            return;
+        }
+        
+        skillsCatalog = data.categories || {};
+    } catch (e) {
+        container.innerHTML = `<div class="error-state">⚠️ Ошибка загрузки: ${e.message}</div>`;
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    // Собираем все скиллы для поиска
+    Object.entries(skillsCatalog).forEach(([categoryKey, categoryData]) => {
+        const skills = categoryData.skills || [];
         skills.forEach(skill => {
-            allSkills.push({ ...skill, category });
+            allSkills.push({ ...skill, category: `${categoryData.emoji} ${categoryData.name}` });
         });
     });
 
-    Object.entries(skillsCatalog).forEach(([category, skills]) => {
+    // Рендерим категории
+    Object.entries(skillsCatalog).forEach(([categoryKey, categoryData]) => {
+        const skills = categoryData.skills || [];
+        if (skills.length === 0) return;
+        
         const categoryDiv = document.createElement('div');
         categoryDiv.className = 'skill-category';
         categoryDiv.innerHTML = `
             <div class="skill-category-header" onclick="toggleCategory(this)">
-                <span class="skill-category-icon">${category.split(' ')[0]}</span>
-                <span>${category.split(' ').slice(1).join(' ')}</span>
+                <span class="skill-category-icon">${categoryData.emoji}</span>
+                <span>${categoryData.name}</span>
                 <span class="skill-category-count">${skills.length}</span>
             </div>
             <div class="skill-category-items">
@@ -652,7 +635,7 @@ if ('serviceWorker' in navigator) {
 }
 
 // ===== AI CHAT =====
-const AI_API_URL = 'https://desktop-a857bb7.tail58eca6.ts.net/v1/chat/completions';
+const AI_API_URL = '/api/ai/chat';  // Прокси через VPS
 let isRecording = false;
 let recognition = null;
 let aiChatHistory = [];
@@ -674,7 +657,7 @@ function closeView() {
 // Voice input using Web Speech API
 function toggleVoiceInput() {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert('��������� ���� �� �������������� � ���� ��������');
+        alert('��������� ���� �� �������������� � ���� ��������');
         return;
     }
 
@@ -752,7 +735,7 @@ async function sendAiMessage() {
     aiChatHistory.push({ role: 'user', content: message });
 
     // Show thinking
-    const thinkingId = addChatMessage('�����...', 'assistant thinking');
+    const thinkingId = addChatMessage('�����...', 'assistant thinking');
 
     try {
         const response = await fetch(AI_API_URL, {
@@ -777,11 +760,11 @@ async function sendAiMessage() {
             // Speak the response
             speakText(reply);
         } else if (data.error) {
-            addChatMessage('������: ' + data.error.message, 'assistant');
+            addChatMessage('������: ' + data.error.message, 'assistant');
         }
     } catch (error) {
         document.getElementById(thinkingId)?.remove();
-        addChatMessage('������ �����: ' + error.message, 'assistant');
+        addChatMessage('������ �����: ' + error.message, 'assistant');
     }
 }
 
