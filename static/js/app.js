@@ -21,12 +21,45 @@ const messengerLinks = {
 document.addEventListener('DOMContentLoaded', () => {
     updateDate();
     setInterval(updateDate, 60000);
+    loadVersionInfo();
     
     if (window.Telegram?.WebApp) {
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
     }
 });
+
+// ===== VERSION INFO =====
+async function loadVersionInfo() {
+    try {
+        const response = await fetch(`${API_BASE}/api/version`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        
+        // Отображаем версию
+        const versionEl = document.getElementById('versionText');
+        if (versionEl && data.version) {
+            versionEl.textContent = `v${data.version}`;
+        }
+        
+        // Отображаем дату последнего обновления
+        const updateEl = document.getElementById('lastUpdateText');
+        if (updateEl && data.lastUpdate) {
+            const date = new Date(data.lastUpdate);
+            const formatted = date.toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            updateEl.textContent = formatted;
+        }
+    } catch (e) {
+        console.log('Version info not available');
+    }
+}
 
 function updateDate() {
     const now = new Date();
@@ -47,25 +80,21 @@ function closeView() {
 
 // ===== BOTTOM NAV ACTIONS =====
 function openArchive() {
-    if(window.FDAnalytics) FDAnalytics.track('btn_archive');
     currentRootPath = 'АРХИВ';
     openFolder('АРХИВ');
 }
 
 function openDownloads() {
-    if(window.FDAnalytics) FDAnalytics.track('btn_downloads');
     showView('downloadsView');
     loadDownloadsTab('Загрузки');
 }
 
 function openCRM() {
-    if(window.FDAnalytics) FDAnalytics.track('btn_mcrm');
     showView('crmView');
     document.getElementById('crmIframe').src = 'https://crm.rko.center/leads';
 }
 
 function openHelper() {
-    if(window.FDAnalytics) FDAnalytics.track('btn_assistant');
     showView('helperView');
     loadSkills();
 }
@@ -84,7 +113,6 @@ function closeMessengerPopup() {
 }
 
 function openMessenger(name) {
-    if(window.FDAnalytics) FDAnalytics.track('btn_' + name.toLowerCase());
     closeMessengerPopup();
     const links = messengerLinks[name];
     if (!links) return;
@@ -185,7 +213,6 @@ let downloadsCurrentPath = '';
 let downloadsRootPath = '';
 
 function switchTab(folder, btn) {
-    if(window.FDAnalytics) FDAnalytics.track(folder.includes('Загрузки') ? 'tab_downloads' : 'tab_clients');
     document.querySelectorAll('.folder-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
     downloadsRootPath = folder;
@@ -679,7 +706,6 @@ let recognition = null;
 let aiChatHistory = [];
 
 function openAiChat() {
-    if(window.FDAnalytics) FDAnalytics.track('btn_ai_chat');
     showView('aiChatView');
     checkAiStatus();
 }
@@ -777,7 +803,6 @@ function endVoiceRecord(event) {
 }
 
 function sendVoiceMessage() {
-    if(window.FDAnalytics) FDAnalytics.track('ai_voice_message');
     if (recognition) {
         recognition.stop();
     }
@@ -817,8 +842,6 @@ function handleAiInputKeypress(event) {
 }
 
 async function sendAiMessage() {
-    if(window.FDAnalytics) FDAnalytics.track('ai_text_message');
-    if(window.FDAnalytics) FDAnalytics.track('ai_text_message');
     const input = document.getElementById('aiTextInput');
     const message = input.value.trim();
     if (!message) return;

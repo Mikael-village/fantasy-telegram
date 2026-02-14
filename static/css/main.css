@@ -75,6 +75,23 @@ body {
     background: var(--success);
 }
 
+.version-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+.version-separator {
+    color: var(--border);
+}
+
+#lastUpdateText {
+    font-size: 10px;
+}
+
 /* ===== MAIN AREA ===== */
 .main-area {
     flex: 1;
