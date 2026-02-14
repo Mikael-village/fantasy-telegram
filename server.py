@@ -24,6 +24,7 @@ BOT_TOKEN = os.getenv('BOT_TOKEN', '')
 OWNER_CHAT_ID = os.getenv('OWNER_CHAT_ID', '')
 DATA_FILE = Path(__file__).parent / 'data.json'
 INDEX_FILE = Path(__file__).parent / 'index.html'
+VERSION_FILE = Path(__file__).parent / 'version.json'
 CHAT_FILE = Path(__file__).parent / 'chat_history.json'
 SOUL_FILE = Path(__file__).parent / 'soul.json'
 
@@ -265,6 +266,50 @@ async def health():
         "service": "Fantasy Dashboard",
         "version": "2.0.0",
         "connections": len(manager.active_connections)
+    }
+
+@app.get("/api/version")
+async def get_version():
+    """Получить версию и дату последнего обновления"""
+    import subprocess
+    
+    version = "1.0.0"
+    last_update = None
+    
+    # Читаем версию из version.json
+    try:
+        if VERSION_FILE.exists():
+            with open(VERSION_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                version = data.get("version", "1.0.0")
+    except:
+        pass
+    
+    # Получаем дату последнего git коммита
+    try:
+        result = subprocess.run(
+            ["git", "log", "-1", "--format=%ci"],
+            cwd=Path(__file__).parent,
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            last_update = result.stdout.strip()
+    except:
+        pass
+    
+    # Fallback: дата модификации index.html
+    if not last_update:
+        try:
+            mtime = INDEX_FILE.stat().st_mtime
+            last_update = datetime.fromtimestamp(mtime).isoformat()
+        except:
+            last_update = datetime.now().isoformat()
+    
+    return {
+        "version": version,
+        "lastUpdate": last_update
     }
 
 @app.get("/api/soul")

@@ -21,12 +21,45 @@ const messengerLinks = {
 document.addEventListener('DOMContentLoaded', () => {
     updateDate();
     setInterval(updateDate, 60000);
+    loadVersionInfo();
     
     if (window.Telegram?.WebApp) {
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
     }
 });
+
+// ===== VERSION INFO =====
+async function loadVersionInfo() {
+    try {
+        const response = await fetch(`${API_BASE}/api/version`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        
+        // Отображаем версию
+        const versionEl = document.getElementById('versionText');
+        if (versionEl && data.version) {
+            versionEl.textContent = `v${data.version}`;
+        }
+        
+        // Отображаем дату последнего обновления
+        const updateEl = document.getElementById('lastUpdateText');
+        if (updateEl && data.lastUpdate) {
+            const date = new Date(data.lastUpdate);
+            const formatted = date.toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            updateEl.textContent = formatted;
+        }
+    } catch (e) {
+        console.log('Version info not available');
+    }
+}
 
 function updateDate() {
     const now = new Date();
