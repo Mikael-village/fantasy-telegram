@@ -1,140 +1,92 @@
-# post-deploy-check.ps1 - Диагностика Fantasy Dashboard после деплоя
+# post-deploy-check.ps1 - Диагностика после деплоя
 # Использование: .\post-deploy-check.ps1
 
-$ErrorActionPreference = "Continue"
-$baseUrl = "http://188.120.249.151:8000"
-$passed = 0
-$failed = 0
-$results = @()
+$VPS = "root@188.120.249.151"
+$ApiUrl = "http://localhost:8000"
 
 Write-Host ""
 Write-Host "📊 Диагностика Fantasy Dashboard" -ForegroundColor Cyan
 Write-Host "=================================" -ForegroundColor Cyan
 Write-Host ""
 
-# 1. Проверка сервиса
-Write-Host "1️⃣ Сервис fantasy..." -NoNewline
-$serviceStatus = ssh root@188.120.249.151 "systemctl is-active fantasy" 2>$null
-if ($serviceStatus -eq "active") {
-    Write-Host " ✅ active" -ForegroundColor Green
-    $passed++
-    $results += "✅ Сервис: active"
-} else {
-    Write-Host " ❌ $serviceStatus" -ForegroundColor Red
-    $failed++
-    $results += "❌ Сервис: $serviceStatus"
+# Получаем результаты диагностики
+$result = ssh $VPS "curl -s $ApiUrl/api/health/full" | ConvertFrom-Json
+
+if (-not $result) {
+    Write-Host "❌ Не удалось получить данные диагностики!" -ForegroundColor Red
+    exit 1
 }
 
-# 2. Проверка API version
-Write-Host "2️⃣ API /api/version..." -NoNewline
-try {
-    $version = Invoke-RestMethod -Uri "$baseUrl/api/version" -TimeoutSec 5
-    Write-Host " ✅ v$($version.version)" -ForegroundColor Green
-    $passed++
-    $results += "✅ Версия: v$($version.version)"
-} catch {
-    Write-Host " ❌ недоступен" -ForegroundColor Red
-    $failed++
-    $results += "❌ API version: недоступен"
-}
+# Версия
+Write-Host "Версия: " -NoNewline
+Write-Host "v$($result.version)" -ForegroundColor Yellow
+Write-Host ""
 
-# 3. Проверка главной страницы
-Write-Host "3️⃣ Главная страница..." -NoNewline
-try {
-    $response = Invoke-WebRequest -Uri "$baseUrl/" -TimeoutSec 5
-    if ($response.StatusCode -eq 200 -and $response.Content -match "Fantasy Dashboard") {
-        Write-Host " ✅ OK" -ForegroundColor Green
-        $passed++
-        $results += "✅ Главная: OK"
-    } else {
-        Write-Host " ⚠️ загрузилась, но контент странный" -ForegroundColor Yellow
-        $passed++
-        $results += "⚠️ Главная: загрузилась с предупреждением"
+# Проверки
+Write-Host "Проверки:" -ForegroundColor White
+
+foreach ($check in $result.checks.PSObject.Properties) {
+    $name = $check.Name
+    $data = $check.Value
+    $status = $data.status
+    
+    $icon = switch ($status) {
+        "ok" { "✅" }
+        "warning" { "⚠️" }
+        "error" { "❌" }
+        default { "❓" }
     }
-} catch {
-    Write-Host " ❌ недоступна" -ForegroundColor Red
-    $failed++
-    $results += "❌ Главная: недоступна"
+    
+    $color = switch ($status) {
+        "ok" { "Green" }
+        "warning" { "Yellow" }
+        "error" { "Red" }
+        default { "White" }
+    }
+    
+    $details = ""
+    if ($data.message) { $details = " - $($data.message)" }
+    elseif ($data.ms) { $details = " - $($data.ms)ms" }
+    elseif ($data.connected -ne $null) { $details = " - $(if ($data.connected) {'connected'} else {'offline'})" }
+    elseif ($data.online -ne $null) { $details = " - $(if ($data.online) {'online'} else {'offline'})" }
+    
+    Write-Host "  $icon " -NoNewline
+    Write-Host "$name" -NoNewline -ForegroundColor $color
+    Write-Host "$details"
 }
 
-# 4. Проверка статики (CSS)
-Write-Host "4️⃣ Статика CSS..." -NoNewline
-try {
-    $css = Invoke-WebRequest -Uri "$baseUrl/static/css/main.css" -TimeoutSec 5
-    if ($css.StatusCode -eq 200) {
-        Write-Host " ✅ OK" -ForegroundColor Green
-        $passed++
-        $results += "✅ CSS: OK"
-    }
-} catch {
-    Write-Host " ❌ недоступен" -ForegroundColor Red
-    $failed++
-    $results += "❌ CSS: недоступен"
-}
-
-# 5. Проверка статики (JS)
-Write-Host "5️⃣ Статика JS..." -NoNewline
-try {
-    $js = Invoke-WebRequest -Uri "$baseUrl/static/js/app.js" -TimeoutSec 5
-    if ($js.StatusCode -eq 200) {
-        Write-Host " ✅ OK" -ForegroundColor Green
-        $passed++
-        $results += "✅ JS: OK"
-    }
-} catch {
-    Write-Host " ❌ недоступен" -ForegroundColor Red
-    $failed++
-    $results += "❌ JS: недоступен"
-}
-
-# 6. Проверка AI status
-Write-Host "6️⃣ AI Status..." -NoNewline
-try {
-    $ai = Invoke-RestMethod -Uri "$baseUrl/api/ai/status" -TimeoutSec 5
-    if ($ai.online -eq $true) {
-        Write-Host " ✅ online" -ForegroundColor Green
-        $passed++
-        $results += "✅ AI: online"
-    } else {
-        Write-Host " ⚠️ offline (ожидаемо без ping)" -ForegroundColor Yellow
-        $passed++
-        $results += "⚠️ AI: offline"
-    }
-} catch {
-    Write-Host " ⚠️ endpoint недоступен" -ForegroundColor Yellow
-    $results += "⚠️ AI status: endpoint недоступен"
-}
-
-# 7. Проверка PC Bridge
-Write-Host "7️⃣ PC Bridge..." -NoNewline
-try {
-    $pc = Invoke-RestMethod -Uri "$baseUrl/api/pc/status" -TimeoutSec 5
-    if ($pc.connected -eq $true) {
-        Write-Host " ✅ connected" -ForegroundColor Green
-        $passed++
-        $results += "✅ PC Bridge: connected"
-    } else {
-        Write-Host " ⚠️ offline (ожидаемо если ПК выключен)" -ForegroundColor Yellow
-        $results += "⚠️ PC Bridge: offline"
-    }
-} catch {
-    Write-Host " ⚠️ недоступен" -ForegroundColor Yellow
-    $results += "⚠️ PC Bridge: недоступен"
-}
+Write-Host ""
 
 # Итог
-Write-Host ""
-Write-Host "=================================" -ForegroundColor Cyan
-$total = $passed + $failed
-Write-Host "Результат: $passed/$total проверок пройдено" -ForegroundColor $(if ($failed -eq 0) { "Green" } else { "Yellow" })
+$summary = $result.summary
+Write-Host "Итог: " -NoNewline
+Write-Host "$($summary.passed) passed" -NoNewline -ForegroundColor Green
+Write-Host ", " -NoNewline
+Write-Host "$($summary.warnings) warnings" -NoNewline -ForegroundColor Yellow
+Write-Host ", " -NoNewline
+Write-Host "$($summary.failed) failed" -ForegroundColor Red
 
-if ($failed -gt 0) {
-    Write-Host ""
-    Write-Host "⚠️ Есть проблемы! Рекомендуется откат:" -ForegroundColor Red
-    Write-Host "   .\rollback.ps1 [предыдущая версия]" -ForegroundColor Yellow
+Write-Host ""
+
+# Общий статус
+$overall = $result.overall
+$overallIcon = switch ($overall) {
+    "ok" { "✅" }
+    "warning" { "⚠️" }
+    "error" { "❌" }
+}
+$overallColor = switch ($overall) {
+    "ok" { "Green" }
+    "warning" { "Yellow" }
+    "error" { "Red" }
+}
+
+Write-Host "$overallIcon Общий статус: " -NoNewline
+Write-Host $overall.ToUpper() -ForegroundColor $overallColor
+Write-Host ""
+
+# Возвращаем код ошибки если есть проблемы
+if ($overall -eq "error") {
+    Write-Host "⚠️ Обнаружены критические проблемы! Рекомендуется откат." -ForegroundColor Red
     exit 1
-} else {
-    Write-Host ""
-    Write-Host "✅ Все критические проверки пройдены!" -ForegroundColor Green
-    exit 0
 }
