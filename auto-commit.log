@@ -191,3 +191,20 @@ After doing this, you may fix the identity used for this commit with:
  4 files changed, 610 insertions(+), 22 deletions(-)
 To github.com:Mikael-village/fantasy-telegram.git
    49b2fa9..8c864c5  main -> main
+[main 0964ddc] auto: 2026-02-14 19:35
+ Committer: root <root@brand.online.fvds.ru>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly. Run the
+following command and follow the instructions in your editor to edit
+your configuration file:
+
+    git config --global --edit
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 3 files changed, 546 insertions(+), 1 deletion(-)
+To github.com:Mikael-village/fantasy-telegram.git
+   8c864c5..0964ddc  main -> main
