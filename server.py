@@ -312,6 +312,133 @@ async def get_version():
         "lastUpdate": last_update
     }
 
+@app.get("/api/health/full")
+async def health_full():
+    """Полная диагностика системы"""
+    import time
+    
+    results = {
+        "version": None,
+        "timestamp": datetime.now().isoformat(),
+        "checks": {},
+        "summary": {"passed": 0, "failed": 0, "warnings": 0}
+    }
+    
+    # 1. Версия
+    try:
+        if VERSION_FILE.exists():
+            with open(VERSION_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                results["version"] = data.get("version", "unknown")
+    except:
+        results["version"] = "unknown"
+    
+    # 2. Проверка статических файлов
+    static_files = [
+        ("index.html", INDEX_FILE),
+        ("main.css", Path(__file__).parent / "static" / "css" / "main.css"),
+        ("app.js", Path(__file__).parent / "static" / "js" / "app.js"),
+    ]
+    
+    static_ok = True
+    static_details = []
+    for name, path in static_files:
+        exists = path.exists()
+        static_details.append({"file": name, "exists": exists})
+        if not exists:
+            static_ok = False
+    
+    results["checks"]["static_files"] = {
+        "status": "ok" if static_ok else "error",
+        "details": static_details
+    }
+    if static_ok:
+        results["summary"]["passed"] += 1
+    else:
+        results["summary"]["failed"] += 1
+    
+    # 3. Проверка data.json
+    try:
+        if DATA_FILE.exists():
+            with open(DATA_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            results["checks"]["data_file"] = {"status": "ok", "records": len(data.get("cards", []))}
+            results["summary"]["passed"] += 1
+        else:
+            results["checks"]["data_file"] = {"status": "error", "message": "File not found"}
+            results["summary"]["failed"] += 1
+    except Exception as e:
+        results["checks"]["data_file"] = {"status": "error", "message": str(e)}
+        results["summary"]["failed"] += 1
+    
+    # 4. WebSocket connections
+    results["checks"]["websocket"] = {
+        "status": "ok",
+        "active_connections": len(manager.active_connections)
+    }
+    results["summary"]["passed"] += 1
+    
+    # 5. PC Bridge
+    pc_connected = pc_bridge.is_connected
+    results["checks"]["pc_bridge"] = {
+        "status": "ok" if pc_connected else "warning",
+        "connected": pc_connected,
+        "message": "Connected" if pc_connected else "PC offline (expected if PC is off)"
+    }
+    if pc_connected:
+        results["summary"]["passed"] += 1
+    else:
+        results["summary"]["warnings"] += 1
+    
+    # 6. AI Status
+    try:
+        if AI_STATUS_FILE.exists():
+            with open(AI_STATUS_FILE, 'r', encoding='utf-8') as f:
+                ai_data = json.load(f)
+            last_ping = datetime.fromisoformat(ai_data.get('last_ping', '2000-01-01'))
+            diff_seconds = (datetime.now() - last_ping).total_seconds()
+            ai_online = diff_seconds < 120
+            results["checks"]["ai_status"] = {
+                "status": "ok" if ai_online else "warning",
+                "online": ai_online,
+                "last_ping": ai_data.get('last_ping'),
+                "seconds_ago": int(diff_seconds)
+            }
+            if ai_online:
+                results["summary"]["passed"] += 1
+            else:
+                results["summary"]["warnings"] += 1
+        else:
+            results["checks"]["ai_status"] = {"status": "warning", "online": False, "message": "No ping data"}
+            results["summary"]["warnings"] += 1
+    except Exception as e:
+        results["checks"]["ai_status"] = {"status": "error", "message": str(e)}
+        results["summary"]["failed"] += 1
+    
+    # 7. Response time (self-check)
+    start = time.time()
+    # Simple operation to measure
+    _ = list(range(1000))
+    response_time_ms = int((time.time() - start) * 1000)
+    results["checks"]["response_time"] = {
+        "status": "ok" if response_time_ms < 500 else "warning",
+        "ms": response_time_ms
+    }
+    if response_time_ms < 500:
+        results["summary"]["passed"] += 1
+    else:
+        results["summary"]["warnings"] += 1
+    
+    # Overall status
+    if results["summary"]["failed"] > 0:
+        results["overall"] = "error"
+    elif results["summary"]["warnings"] > 0:
+        results["overall"] = "warning"
+    else:
+        results["overall"] = "ok"
+    
+    return results
+
 @app.get("/api/soul")
 async def get_soul():
     """Получить данные вкладки Душа (папка клиентов)"""
