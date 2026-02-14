@@ -32,7 +32,9 @@ $newVersion = "$major.$minor.$patch"
 $json.version = $newVersion
 $json | Add-Member -NotePropertyName "lastUpdate" -NotePropertyValue (Get-Date -Format "yyyy-MM-ddTHH:mm:ss") -Force
 
-$json | ConvertTo-Json -Depth 10 | Set-Content $versionFile -Encoding UTF8
+# Сохраняем без BOM (UTF8NoBOM)
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+[System.IO.File]::WriteAllText($versionFile, ($json | ConvertTo-Json -Depth 10), $utf8NoBom)
 
 Write-Host ""
 Write-Host "✅ Версия обновлена: " -NoNewline
