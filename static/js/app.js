@@ -569,6 +569,38 @@ function downloadFile(path, filename) {
     document.body.removeChild(a);
 }
 
+async function fileActionSaveToPC() {
+    const file = selectedFile;
+    closeFileActions();
+    if (!file) return;
+    
+    showLoading(true);
+    try {
+        const response = await fetch(`${API_BASE}/api/pc/save-to-downloads?path=${encodeURIComponent(file.path)}`, {
+            method: 'POST'
+        });
+        const data = await response.json();
+        
+        if (data.error) {
+            alert('Ошибка: ' + data.error);
+        } else if (data.success) {
+            showToast(`✅ Сохранено: ${data.filename}`);
+        }
+    } catch (e) {
+        alert('Ошибка: ' + e.message);
+    }
+    showLoading(false);
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:8px;z-index:10000;animation:fadeIn 0.3s';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
 function showImagePreview(title, url) {
     const modal = document.createElement('div');
     modal.className = 'text-modal';

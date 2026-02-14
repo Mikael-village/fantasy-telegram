@@ -11,7 +11,7 @@ from pathlib import Path
 from datetime import datetime
 
 # Конфигурация
-VPS_URL = os.getenv('VPS_URL', 'ws://188.120.249.151:8000/ws/pc-bridge')
+VPS_URL = os.getenv('VPS_URL', 'wss://fd.xn--80abjdwkmbdfs.xn--p1ai/ws/pc-bridge')
 BRIDGE_SECRET = os.getenv('BRIDGE_SECRET', 'fantasy-bridge-2026')
 FILES_ROOT = Path(os.getenv('FILES_ROOT', 'C:/BRANDONLINE'))
 RECONNECT_DELAY = 5  # секунд
@@ -39,6 +39,8 @@ async def handle_request(data: dict) -> dict:
             return await download_file(path)
         elif action == 'open':
             return await get_file_url(path)
+        elif action == 'save_to_downloads':
+            return await save_to_downloads(path)
         elif action == 'ping':
             return {'status': 'ok', 'time': datetime.now().isoformat()}
         else:
@@ -175,6 +177,41 @@ async def get_file_url(path: str) -> dict:
         'size': target.stat().st_size,
         'path': str(target),
         'downloadable': True
+    }
+
+async def save_to_downloads(path: str) -> dict:
+    """Скопировать файл в папку Загрузки"""
+    import shutil
+    
+    DOWNLOADS_FOLDER = Path('C:/BRANDONLINE/Загрузки')
+    
+    target = safe_path(path)
+    
+    if not target.exists():
+        return {'error': 'File not found'}
+    
+    if not target.is_file():
+        return {'error': 'Not a file'}
+    
+    # Создаём папку если нет
+    DOWNLOADS_FOLDER.mkdir(parents=True, exist_ok=True)
+    
+    # Имя файла (с обработкой дубликатов)
+    dest = DOWNLOADS_FOLDER / target.name
+    counter = 1
+    while dest.exists():
+        stem = target.stem
+        suffix = target.suffix
+        dest = DOWNLOADS_FOLDER / f"{stem} ({counter}){suffix}"
+        counter += 1
+    
+    # Копируем
+    shutil.copy2(target, dest)
+    
+    return {
+        'success': True,
+        'saved_to': str(dest),
+        'filename': dest.name
     }
 
 async def main():

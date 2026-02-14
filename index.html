@@ -153,10 +153,10 @@
 
         <!-- Right Panel - Additional services -->
         <div class="side-panel">
-            <button class="side-btn" onclick="openService('https://www1.fips.ru/registers-web/', 'ФИПС', false)" title="Все реестры">🏛️</button>
-            <button class="side-btn" onclick="alert('В разработке')" title="Избранное">⭐</button>
-            <button class="side-btn" onclick="alert('В разработке')" title="Недавние">🕐</button>
-            <button class="side-btn" onclick="alert('В разработке')" title="Поиск">🔎</button>
+            <button class="side-btn" onclick="openMessenger('Telegram')" title="Telegram">✈️</button>
+            <button class="side-btn" onclick="openMessenger('MAX')" title="MAX">💬</button>
+            <button class="side-btn" onclick="openMessenger('WhatsApp')" title="WhatsApp">💚</button>
+            <button class="side-btn" onclick="openMessenger('Mail')" title="Почта">📧</button>
             <button class="side-btn" onclick="openCRM()" title="CRM">📊</button>
         </div>
     </div>
@@ -233,5 +233,20 @@
     </div>
 
     <script src="/static/js/app.js"></script>
+    <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" })
+        .then(reg => {
+          reg.addEventListener("updatefound", () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener("statechange", () => {
+              if (newWorker.state === "activated") {
+                window.location.reload();
+              }
+            });
+          });
+        });
+    }
+    </script>
 </body>
 </html>

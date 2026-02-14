@@ -548,6 +548,16 @@ async def pc_download_file(path: str):
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
 
+@app.post("/api/pc/save-to-downloads")
+async def pc_save_to_downloads(path: str):
+    """Сохранить файл в папку Загрузки на PC"""
+    result = await pc_bridge.request("save_to_downloads", path, timeout=30.0)
+    
+    if result.get("error"):
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    return result
+
 # ===== SKILLS API (из _REGISTRY.md) =====
 
 @app.get("/api/skills")
