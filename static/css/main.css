@@ -776,6 +776,81 @@ body {
     -webkit-overflow-scrolling: touch;
 }
 
+/* Rules Modal */
+.rules-modal {
+    max-width: 500px;
+}
+
+.text-modal-header .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.open-file-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.open-file-btn:hover {
+    background: var(--accent);
+}
+
+.rules-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.rule-item {
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.rule-item:last-child {
+    margin-bottom: 0;
+}
+
+.rule-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.rule-icon {
+    font-size: 18px;
+}
+
+.rule-title {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text);
+}
+
+.rule-description {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.rule-description p {
+    margin: 0 0 6px 0;
+}
+
+.rule-description p:last-child {
+    margin-bottom: 0;
+}
+
 /* Image in modal */
 .text-modal-body img {
     max-width: 100%;
