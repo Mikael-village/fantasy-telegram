@@ -30,6 +30,7 @@ switch ($Type) {
 
 $newVersion = "$major.$minor.$patch"
 $json.version = $newVersion
+$json | Add-Member -NotePropertyName "lastUpdate" -NotePropertyValue (Get-Date -Format "yyyy-MM-ddTHH:mm:ss") -Force
 
 $json | ConvertTo-Json -Depth 10 | Set-Content $versionFile -Encoding UTF8
 
