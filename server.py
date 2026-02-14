@@ -271,31 +271,16 @@ async def health():
 @app.get("/api/version")
 async def get_version():
     """Получить версию и дату последнего обновления"""
-    import subprocess
-    
     version = "1.0.0"
     last_update = None
     
-    # Читаем версию из version.json
+    # Читаем версию и lastUpdate из version.json
     try:
         if VERSION_FILE.exists():
-            with open(VERSION_FILE, 'r', encoding='utf-8') as f:
+            with open(VERSION_FILE, 'r', encoding='utf-8-sig') as f:
                 data = json.load(f)
                 version = data.get("version", "1.0.0")
-    except:
-        pass
-    
-    # Получаем дату последнего git коммита
-    try:
-        result = subprocess.run(
-            ["git", "log", "-1", "--format=%ci"],
-            cwd=Path(__file__).parent,
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-        if result.returncode == 0:
-            last_update = result.stdout.strip()
+                last_update = data.get("lastUpdate")
     except:
         pass
     
