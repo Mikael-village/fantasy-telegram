@@ -1,56 +1,48 @@
 # rollback.ps1 - Откат Fantasy Dashboard на указанную версию
-# Использование: .\rollback.ps1 1.0.0
+# Использование: .\rollback.ps1 v1.0.0
 
 param(
     [Parameter(Mandatory=$true)]
     [string]$Version
 )
 
-$VPS = "root@188.120.249.151"
-$RemotePath = "/var/www/fantasy-telegram"
+$ErrorActionPreference = "Stop"
 
-Write-Host ""
-Write-Host "🔄 Откат Fantasy Dashboard на версию v$Version" -ForegroundColor Yellow
-Write-Host ""
+Write-Host "🔄 Откат на версию: $Version" -ForegroundColor Yellow
 
 # Проверяем что тег существует
-Write-Host "Проверяю наличие тега v$Version..." -ForegroundColor Cyan
-$tagCheck = git tag -l "v$Version" 2>&1
-if (-not $tagCheck) {
-    Write-Host "❌ Тег v$Version не найден!" -ForegroundColor Red
+$tagExists = git tag -l $Version
+if (-not $tagExists) {
+    Write-Host "❌ Версия $Version не найдена!" -ForegroundColor Red
     Write-Host ""
-    Write-Host "Доступные версии:" -ForegroundColor Yellow
-    git tag -l "v*" | ForEach-Object { Write-Host "  $_" }
+    Write-Host "Доступные версии:" -ForegroundColor Cyan
+    git tag -l "v*" | Sort-Object -Descending | Select-Object -First 10
     exit 1
 }
 
-Write-Host "✅ Тег найден" -ForegroundColor Green
+# Откат локально
+Write-Host "📦 Откат локального кода..." -ForegroundColor Cyan
+git checkout $Version -- .
 
-# Создаём бэкап текущей версии на VPS
-Write-Host ""
-Write-Host "Создаю бэкап текущей версии на VPS..." -ForegroundColor Cyan
-ssh $VPS "cd $RemotePath && git stash"
+# Деплой на VPS
+Write-Host "🚀 Деплой на VPS..." -ForegroundColor Cyan
+scp static/js/app.js root@188.120.249.151:/var/www/fantasy-telegram/static/js/app.js
+scp static/css/main.css root@188.120.249.151:/var/www/fantasy-telegram/static/css/main.css
+scp index.html root@188.120.249.151:/var/www/fantasy-telegram/index.html
+scp server.py root@188.120.249.151:/var/www/fantasy-telegram/server.py
+scp version.json root@188.120.249.151:/var/www/fantasy-telegram/version.json
 
-# Откатываем на VPS
-Write-Host "Откатываю на v$Version..." -ForegroundColor Cyan
-$result = ssh $VPS "cd $RemotePath && git fetch --tags && git checkout v$Version"
+# Перезапуск сервиса
+Write-Host "🔄 Перезапуск сервиса..." -ForegroundColor Cyan
+ssh root@188.120.249.151 "systemctl restart fantasy"
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Ошибка при откате!" -ForegroundColor Red
+# Проверка
+Write-Host "✅ Проверка..." -ForegroundColor Cyan
+$status = ssh root@188.120.249.151 "systemctl is-active fantasy"
+if ($status -eq "active") {
+    Write-Host ""
+    Write-Host "✅ Откат на $Version выполнен успешно!" -ForegroundColor Green
+} else {
+    Write-Host "❌ Сервис не запустился!" -ForegroundColor Red
     exit 1
 }
-
-# Перезапускаем сервис
-Write-Host "Перезапускаю сервис..." -ForegroundColor Cyan
-ssh $VPS "systemctl restart fantasy"
-
-# Проверяем
-Write-Host ""
-Write-Host "Проверяю статус..." -ForegroundColor Cyan
-Start-Sleep -Seconds 2
-
-$health = ssh $VPS "curl -s http://localhost:8000/api/version"
-Write-Host ""
-Write-Host "✅ Откат завершён!" -ForegroundColor Green
-Write-Host "Текущая версия на сервере: $health" -ForegroundColor Cyan
-Write-Host ""
