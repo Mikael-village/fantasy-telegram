@@ -1,6 +1,8 @@
 """
-Парсер _REGISTRY.md для API /api/skills
+Skills Parser для Fantasy Dashboard
+Динамически парсит _REGISTRY.md — автоматически подхватывает новые категории
 """
+
 import re
 
 def parse_registry_md(content: str) -> dict:
@@ -8,22 +10,30 @@ def parse_registry_md(content: str) -> dict:
     categories = {}
     current_category = None
     
-    # Маппинг заголовков на emoji и названия
-    category_map = {
-        "СИСТЕМА": {"emoji": "⚙️", "name": "Система"},
-        "CRM": {"emoji": "💼", "name": "CRM"},
-        "МЕССЕНДЖЕРЫ": {"emoji": "💬", "name": "Мессенджеры"},
-        "ДОКУМЕНТЫ": {"emoji": "📋", "name": "Документы"},
-        "РОСПАТЕНТ": {"emoji": "🏛️", "name": "Роспатент"},
-        "АВТОМАТИЗАЦИЯ": {"emoji": "🔧", "name": "Автоматизация"},
-        "ИССЛЕДОВАНИЕ": {"emoji": "🔍", "name": "Исследование"},
-        "ИНФРАСТРУКТУРА": {"emoji": "🖥️", "name": "Инфраструктура"},
-        "УТИЛИТЫ": {"emoji": "🛠️", "name": "Утилиты"},
+    # Заголовки которые НЕ являются категориями скиллов
+    skip_headers = {
+        "ТОМА", "ЧАСТО ИСПОЛЬЗУЕМЫЕ", "АРХИВ", "СТАТИСТИКА", 
+        "АЛГОРИТМ ПОИСКА СКИЛЛА", "КОНТРАКТЫ КРИТИЧЕСКИХ СКИЛЛОВ"
     }
     
-    # Emoji для скиллов по ключевым словам
-    emoji_map = {
-        "bitrix": "🔶", "mcrm": "📊",
+    # Emoji для категорий (по ключевым словам)
+    category_emoji = {
+        "СИСТЕМА": "⚙️",
+        "CRM": "💼",
+        "МЕССЕНДЖЕР": "💬",
+        "ДОКУМЕНТ": "📋",
+        "РОСПАТЕНТ": "🏛️",
+        "АВТОМАТИЗАЦ": "🔧",
+        "ИССЛЕДОВАН": "🔍",
+        "ИНФРАСТРУКТУР": "🖥️",
+        "УТИЛИТ": "🛠️",
+        "ОТЧЁТ": "📊",
+        "АНАЛИТИК": "📈",
+    }
+    
+    # Emoji для скиллов по ключевым словам в названии
+    skill_emoji = {
+        "bitrix": "🔶", "mcrm": "📊", "crm": "💼",
         "telegram": "✈️", "whatsapp": "💚", "max": "💙",
         "договор": "📝", "контракт": "📝", "contract": "📝",
         "fips": "📋", "desktop": "🖥️", "macro": "⏺️",
@@ -36,64 +46,101 @@ def parse_registry_md(content: str) -> dict:
         "complex": "🧩", "architecture": "🏛️", "python": "🐍",
         "windows": "🪟", "sound": "🔊", "large": "📦",
         "brand": "🔍", "service": "🎓", "explorer": "🧭",
-        "forward": "↗️", "firstvds": "🖧"
+        "forward": "↗️", "firstvds": "🖧", "history": "📜",
+        "report": "📊", "analytics": "📈", "fd-": "🎮",
+        "messenger": "💬", "new-": "✨", "rules": "📋",
     }
     
+    def get_category_emoji(name: str) -> str:
+        """Подобрать emoji для категории"""
+        name_upper = name.upper()
+        for key, emoji in category_emoji.items():
+            if key in name_upper:
+                return emoji
+        return "📁"  # дефолт
+    
+    def get_skill_emoji(skill_name: str) -> str:
+        """Подобрать emoji для скилла"""
+        skill_lower = skill_name.lower()
+        for key, emoji in skill_emoji.items():
+            if key in skill_lower:
+                return emoji
+        return "📄"  # дефолт
+    
+    def format_category_name(raw_name: str) -> str:
+        """Форматировать название категории"""
+        # Убираем emoji и лишние символы
+        clean = re.sub(r'[🔧📦⭐]', '', raw_name).strip()
+        # Убираем "(вспомогательные)" и подобное
+        clean = re.sub(r'\([^)]*\)', '', clean).strip()
+        return clean
+    
     lines = content.split("\n")
+    
     for line in lines:
-        # Ищем заголовки категорий
-        header_match = re.match(r"^## (.+)$", line.strip())
+        line = line.strip()
+        
+        # Ищем заголовки категорий (## НАЗВАНИЕ)
+        header_match = re.match(r"^## (.+)$", line)
         if header_match:
-            header = header_match.group(1).upper()
-            for key in category_map:
-                if key in header:
-                    current_category = key
-                    if current_category not in categories:
-                        cat_info = category_map[current_category]
-                        categories[current_category] = {
-                            "emoji": cat_info["emoji"],
-                            "name": cat_info["name"],
-                            "skills": []
-                        }
-                    break
-            else:
-                # Категория не найдена в маппинге - сбросить
-                if "ЧАСТО" in header or "АРХИВ" in header or "СТАТИСТИКА" in header or "АЛГОРИТМ" in header or "КОНТРАКТЫ" in header:
+            raw_header = header_match.group(1).strip()
+            header_clean = format_category_name(raw_header).upper()
+            
+            # Пропускаем служебные заголовки
+            skip = False
+            for skip_key in skip_headers:
+                if skip_key in header_clean:
+                    skip = True
                     current_category = None
+                    break
+            
+            if not skip and header_clean:
+                current_category = header_clean
+                if current_category not in categories:
+                    categories[current_category] = {
+                        "emoji": get_category_emoji(current_category),
+                        "name": format_category_name(raw_header).title(),
+                        "skills": []
+                    }
             continue
         
-        # Ищем строки таблицы со скиллами
-        if current_category and line.startswith("|") and "`" in line:
-            parts = [p.strip() for p in line.split("|")]
-            if len(parts) >= 4:
-                skill_match = re.search(r"`([^`]+)`", parts[1])
-                if skill_match:
-                    skill_id = skill_match.group(1)
-                    triggers = parts[2] if len(parts) > 2 else ""
-                    description = parts[3] if len(parts) > 3 else ""
-                    
-                    # Пропускаем заголовок таблицы
-                    if skill_id == "Скилл" or "---" in skill_id:
-                        continue
-                    
-                    # Определяем emoji
-                    emoji = "📄"
-                    search_text = (skill_id + " " + triggers).lower()
-                    for key, em in emoji_map.items():
-                        if key in search_text:
-                            emoji = em
-                            break
-                    
-                    # Название из описания
-                    name = description.split("—")[0].strip() if "—" in description else description
-                    if len(name) > 35:
-                        name = name[:32] + "..."
-                    
-                    categories[current_category]["skills"].append({
-                        "id": skill_id,
-                        "name": name,
-                        "emoji": emoji,
-                        "triggers": triggers
-                    })
+        # Ищем строки скиллов в таблице (| `skill-name` | триггеры | описание |)
+        if current_category and line.startswith("|"):
+            skill_match = re.match(r"\|\s*`([^`]+)`\s*\|([^|]*)\|([^|]*)\|", line)
+            if skill_match:
+                skill_name = skill_match.group(1).strip()
+                triggers = skill_match.group(2).strip()
+                description = skill_match.group(3).strip()
+                
+                # Пропускаем устаревшие скиллы
+                if "устарел" in description.lower():
+                    continue
+                
+                categories[current_category]["skills"].append({
+                    "name": skill_name,
+                    "emoji": get_skill_emoji(skill_name),
+                    "triggers": triggers,
+                    "description": description
+                })
     
     return categories
+
+
+# Тест
+if __name__ == "__main__":
+    test_content = """
+## ТОМА
+| Том | Описание |
+
+## ОТЧЁТЫ
+| Скилл | Триггеры | Описание |
+| `session-report` | статус, контекст | Отчёт по сессии |
+| `architecture-report` | диагностика | Отчёт по архитектуре |
+
+## СИСТЕМА
+| Скилл | Триггеры | Описание |
+| `skill-creator` | создай скилл | Создание скиллов |
+"""
+    result = parse_registry_md(test_content)
+    import json
+    print(json.dumps(result, ensure_ascii=False, indent=2))
