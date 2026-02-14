@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Link Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #fff; padding: 20px; }
+        h1 { margin-bottom: 10px; font-size: 18px; }
+        h2 { margin: 20px 0 10px; font-size: 14px; color: #007AFF; }
+        .btn { 
+            display: block; 
+            width: 100%; 
+            padding: 12px; 
+            margin-bottom: 6px; 
+            background: #333; 
+            border: none; 
+            border-radius: 8px; 
+            color: #fff; 
+            font-size: 11px; 
+            text-align: left;
+            word-break: break-all;
+        }
+        .btn:active { background: #444; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Deep Link Tester</h1>
+
+    <h2>📧 Mail.ru</h2>
+    <button class="btn" onclick="tryLink('mailru://')">mailru://</button>
+    <button class="btn" onclick="tryLink('mailru://inbox')">mailru://inbox</button>
+    <button class="btn" onclick="tryLink('mailru://folder/0')">mailru://folder/0</button>
+    <button class="btn" onclick="tryLink('mailru://mail')">mailru://mail</button>
+    <button class="btn" onclick="tryLink('mailrumail://')">mailrumail://</button>
+    <button class="btn" onclick="tryLink('mailrumail://inbox')">mailrumail://inbox</button>
+    <button class="btn" onclick="tryLink('ru.mail://')">ru.mail://</button>
+    <button class="btn" onclick="tryLink('https://e.mail.ru/')">https://e.mail.ru/</button>
+    <button class="btn" onclick="tryLink('https://e.mail.ru/inbox/')">https://e.mail.ru/inbox/</button>
+    <button class="btn" onclick="tryLink('https://mail.ru/')">https://mail.ru/</button>
+    <button class="btn" onclick="tryLink('https://mail.ru/app')">https://mail.ru/app</button>
+    <button class="btn" onclick="tryLink('https://go.mail.ru/inbox')">https://go.mail.ru/inbox</button>
+    <button class="btn" onclick="tryLink('intent://#Intent;package=ru.mail.mailapp;action=android.intent.action.MAIN;end')">intent (MAIN)</button>
+    <button class="btn" onclick="tryLink('intent://inbox#Intent;package=ru.mail.mailapp;scheme=mailru;end')">intent (mailru://inbox)</button>
+
+    <h2>💬 WhatsApp</h2>
+    <button class="btn" onclick="tryLink('whatsapp://')">whatsapp://</button>
+    <button class="btn" onclick="tryLink('whatsapp://send')">whatsapp://send</button>
+    <button class="btn" onclick="tryLink('whatsapp://chat')">whatsapp://chat</button>
+    <button class="btn" onclick="tryLink('whatsapp://app')">whatsapp://app</button>
+    <button class="btn" onclick="tryLink('https://wa.me/')">https://wa.me/</button>
+    <button class="btn" onclick="tryLink('https://api.whatsapp.com/')">https://api.whatsapp.com/</button>
+    <button class="btn" onclick="tryLink('https://whatsapp.com/')">https://whatsapp.com/</button>
+    <button class="btn" onclick="tryLink('https://whatsapp.com/app')">https://whatsapp.com/app</button>
+    <button class="btn" onclick="tryLink('intent://#Intent;package=com.whatsapp;action=android.intent.action.MAIN;end')">intent (MAIN)</button>
+    <button class="btn" onclick="tryLink('intent://send#Intent;package=com.whatsapp;scheme=whatsapp;end')">intent (whatsapp://send)</button>
+
+    <h2>📱 Telegram (проверка)</h2>
+    <button class="btn" onclick="tryLink('tg://')">tg://</button>
+    <button class="btn" onclick="tryLink('tg://resolve')">tg://resolve</button>
+    <button class="btn" onclick="tryLink('tg://msg')">tg://msg</button>
+    <button class="btn" onclick="tryLink('https://t.me/')">https://t.me/</button>
+
+    <script>
+        function tryLink(url) {
+            console.log('Trying:', url);
+            window.location.href = url;
+        }
+    </script>
+</body>
+</html>

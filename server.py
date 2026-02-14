@@ -12,6 +12,7 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException, Header, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 import httpx
 
@@ -46,6 +47,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Статические файлы (CSS, JS)
+STATIC_DIR = Path(__file__).parent / 'static'
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # ===== WEBSOCKET MANAGER =====
 
@@ -165,6 +171,22 @@ async def root():
 
 # ===== PWA STATIC FILES =====
 
+@app.get("/max-test")
+async def max_test():
+    """MAX Deep Link Tester"""
+    test_file = Path(__file__).parent / 'max-test.html'
+    if test_file.exists():
+        return FileResponse(test_file, media_type='text/html')
+    raise HTTPException(status_code=404, detail="Test page not found")
+
+@app.get("/deeplink-test")
+async def deeplink_test():
+    """Universal Deep Link Tester"""
+    test_file = Path(__file__).parent / 'deeplink-test.html'
+    if test_file.exists():
+        return FileResponse(test_file, media_type='text/html')
+    raise HTTPException(status_code=404, detail="Test page not found")
+
 @app.get("/manifest.json")
 async def manifest():
     """PWA Manifest"""
@@ -188,6 +210,22 @@ async def pwa_icon(size: int):
     if icon_file.exists():
         return FileResponse(icon_file, media_type='image/png')
     raise HTTPException(status_code=404, detail="Icon not found")
+
+@app.get("/max-icon.png")
+async def max_icon():
+    """MAX Messenger Icon"""
+    icon_file = Path(__file__).parent / 'max-icon.png'
+    if icon_file.exists():
+        return FileResponse(icon_file, media_type='image/png')
+    raise HTTPException(status_code=404, detail="MAX icon not found")
+
+@app.get("/max-icon-small.png")
+async def max_icon_small():
+    """MAX Messenger Icon (small)"""
+    icon_file = Path(__file__).parent / 'max-icon-small.png'
+    if icon_file.exists():
+        return FileResponse(icon_file, media_type='image/png')
+    raise HTTPException(status_code=404, detail="MAX icon not found")
 
 @app.get("/chat", response_class=HTMLResponse)
 async def chat_page():

@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dashboard</title>
+    <meta name="theme-color" content="#007AFF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Fantasy Dashboard</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon-192.png">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -1014,7 +1019,7 @@
                 <img src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Mail_%28iOS%29.svg" alt="Mail">
             </button>
             <button class="messenger-btn" onclick="openMessenger('MAX')">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/2/21/VK.com-logo.svg" alt="MAX">
+                <img src="/max-icon-small.png" alt="MAX">
             </button>
             <button class="messenger-btn" onclick="openMessenger('WhatsApp')">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
@@ -1062,9 +1067,10 @@
         
         const messengerLinks = {
             'Telegram': { web: 'https://web.telegram.org/', app: 'tg://resolve' },
-            'MAX': { web: 'https://web.max.ru/', app: null },
-            'WhatsApp': { web: 'https://web.whatsapp.com/', app: 'whatsapp://send' },
-            'Mail': { web: 'https://e.mail.ru/inbox/', app: 'mailto:' }
+            'MAX': { web: 'https://web.max.ru/', app: 'https://max.ru/im' },  // работает!
+            'WhatsApp': { web: 'https://web.whatsapp.com/', app: 'whatsapp://chat' },
+            'Mail': { web: 'https://e.mail.ru/inbox/', app: 'https://e.mail.ru/' },  // открывает в PWA
+            'VK': { web: 'https://vk.com/', app: 'vk://' }  // работает для ВКонтакте
         };
 
         // ===== INIT =====
@@ -1136,7 +1142,16 @@
             if (!links) return;
             
             if (isMobile && links.app) {
+                // Try app link with fallback to web
+                const start = Date.now();
                 window.location.href = links.app;
+                
+                // If still here after 1.5s, app didn't open - use web
+                setTimeout(() => {
+                    if (Date.now() - start < 2000) {
+                        window.open(links.web, '_blank');
+                    }
+                }, 1500);
             } else {
                 window.open(links.web, '_blank');
             }
@@ -1698,6 +1713,13 @@
             const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        // ===== PWA SERVICE WORKER =====
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('SW registered'))
+                .catch(err => console.log('SW error:', err));
         }
     </script>
 </body>

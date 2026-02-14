@@ -1,7 +1,10 @@
-const CACHE_NAME = 'fantasy-v1';
+const CACHE_NAME = 'fantasy-v2';
 const STATIC_ASSETS = [
   '/',
-  '/index.html'
+  '/index.html',
+  '/static/css/main.css',
+  '/static/js/app.js',
+  '/manifest.json'
 ];
 
 // Install - cache static assets

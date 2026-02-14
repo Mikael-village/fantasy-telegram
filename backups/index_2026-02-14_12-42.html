@@ -66,29 +66,6 @@
                 <div class="file-list" id="downloadsFileList"></div>
             </div>
 
-            <!-- AI Chat -->
-            <div class="content-view" id="aiChatView">
-                <div class="ai-chat-container">
-                    <div class="ai-chat-header">
-                        <button class="back-btn" onclick="closeView()">←</button>
-                        <div class="ai-chat-title">💬 Помощник</div>
-                        <div class="ai-status" id="aiStatusIndicator">🟢</div>
-                    </div>
-                    <div class="ai-chat-messages" id="aiChatMessages">
-                        <div class="ai-message assistant">
-                            <div class="message-content">Привет! Я твой AI-помощник. Нажми на микрофон и говори — я отвечу голосом и текстом.</div>
-                        </div>
-                    </div>
-                    <div class="ai-chat-input">
-                        <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceInput()">
-                            <span id="voiceIcon">🎤</span>
-                        </button>
-                        <input type="text" id="aiTextInput" placeholder="Или напиши сообщение..." onkeypress="handleAiInputKeypress(event)">
-                        <button class="send-btn" onclick="sendAiMessage()">➤</button>
-                    </div>
-                </div>
-            </div>
-
             <!-- CRM iframe -->
             <div class="content-view" id="crmView">
                 <div class="iframe-view">
@@ -157,7 +134,7 @@
             <button class="side-btn" onclick="alert('В разработке')" title="Избранное">⭐</button>
             <button class="side-btn" onclick="alert('В разработке')" title="Недавние">🕐</button>
             <button class="side-btn" onclick="alert('В разработке')" title="Поиск">🔎</button>
-            <button class="side-btn" onclick="openCRM()" title="CRM">📊</button>
+            <button class="side-btn" onclick="alert('В разработке')" title="Настройки">⚙️</button>
         </div>
     </div>
 
@@ -217,9 +194,9 @@
                 <span class="nav-btn-icon">💬</span>
                 <span class="nav-btn-label">Мессенджеры</span>
             </button>
-            <button class="nav-btn center" onclick="openAiChat()">
-                <span class="nav-btn-icon">🎤</span>
-                <span class="nav-btn-label">AI</span>
+            <button class="nav-btn center" onclick="openCRM()">
+                <span class="nav-btn-icon">📊</span>
+                <span class="nav-btn-label">CRM</span>
             </button>
             <button class="nav-btn" onclick="openHelper()">
                 <span class="nav-btn-icon">🤖</span>
