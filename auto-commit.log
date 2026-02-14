@@ -1,0 +1,3 @@
+/var/www/fantasy-telegram/auto-commit.sh: line 5: syntax error in conditional expression
+/var/www/fantasy-telegram/auto-commit.sh: line 5: syntax error near `apps/fantasy-telegram'
+/var/www/fantasy-telegram/auto-commit.sh: line 5: `if [[ -n \ M apps/fantasy-telegram ]]; then'
